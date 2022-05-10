@@ -12,7 +12,7 @@ import numpy as np
 import copy
 
 class DynamicsModel():
-    def __init__(self, params=None, dynamics_model=None):
+    def __init__(self, params, dynamics_model=None):
         if dynamics_model is not None:
             self._dynamics_model = dynamics_model
             return
@@ -174,23 +174,6 @@ class DynamicsModel():
             model_train_time = time.time() - start
             print(f"Model train time: {model_train_time} seconds")
             print("=========================================\n")
-
-    def add_samples_from_elements(self, elements):
-        A = []
-        S = []
-        NS = []
-        for el in elements:
-            prev_state = el.prev_element.trajectory[-1]
-            # for a, s in zip(el.actions, el.trajectory):
-                # ns = s - prev_state
-                # A.append(copy.copy(a))
-                # S.append(copy.copy(s))
-                # NS.append(copy.copy(ns))
-            for i in range(len(el.trajectory) - 1):
-                A.append(copy.copy(el.actions[i]))
-                S.append(copy.copy(el.trajectory[i]))
-                NS.append(copy.copy(el.trajectory[i+1]))
-        self.add_samples(S, A, NS)
 
     def add_samples_from_transitions(self, transitions):
         A = []
