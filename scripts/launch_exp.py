@@ -113,7 +113,7 @@ if __name__ == '__main__':
         'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
 
         'env': env,
-        'env_max_h': env.max_steps,
+        'env_max_h': env._max_episode_steps,
     }
     
     ## Instanciate the initializer
