@@ -1,12 +1,26 @@
 if __name__ == '__main__':
     # Local imports
-    from model_init_study.models.dynamics_model import DynamicsModel
+    from model_init_study.models.dynamics_model \
+        import DynamicsModel
 
-    from model_init_study.controller.nn_controller import NeuralNetworkController
+    from model_init_study.controller.nn_controller \
+        import NeuralNetworkController
 
-    from model_init_study.initializers.random_policy_initializer import RandomPolicyInitializer
-    from model_init_study.initializers.random_actions_initializer import RandomActionsInitializer
+    from model_init_study.initializers.random_policy_initializer \
+        import RandomPolicyInitializer
+    from model_init_study.initializers.random_actions_initializer \
+        import RandomActionsInitializer
 
+    from model_init_study.visualization.discretized_state_space_visualization \
+        import DiscretizedStateSpaceVisualization
+    from model_init_study.visualization.test_trajectories_visualization \
+        import TestTrajectoriesVisualization
+
+    # Env imports
+    import diversity_algorithms.environments.env_imports ## Contains deterministic ant + fetch
+    import mb_ge ## Contains ball in cup
+    import redundant_arm ## contains redundant arm
+    
     # Gym imports
     import gym
 
@@ -23,18 +37,40 @@ if __name__ == '__main__':
 
     parser.add_argument('--dump-path', type=str, default='default_dump/')
 
+    parser.add_argument('--environment', '-e', type=str, default='ball_in_cup')
+
     args = parser.parse_args()
 
     dynamics_model = DynamicsModel
     
     ## Framework methods
-    env = gym.make('BallInCup3d-v0')
+    
  
     if args.init_method == 'random-policies':
         Initializer = RandomPolicyInitializer
     elif args.init_method == 'random-actions':
         Initializer = RandomActionsInitializer
-   
+
+    env_register_id = 'BallInCup3d-v0'
+    if args.environment == 'ball_in_cup':
+        env_register_id = 'BallInCup3d-v0'
+        ss_min = -0.4
+        ss_max = 0.4
+    if args.environment == 'redundant_arm':
+        env_register_id = 'RedundantArm-v0'
+        ss_min = -1
+        ss_max = 1
+    if args.environment == 'fetch_pick_and_place':
+        env_register_id = 'FetchPickAndPlaceDeterministic-v1'
+        ss_min = -1
+        ss_max = 1
+    if args.environment == 'ant':
+        env_register_id = 'AntBulletEnvDeterministic-v0'
+        ss_min = -10
+        ss_max = 10
+        
+    env = gym.make(env_register_id)
+
     controller_params = \
     {
         'controller_input_dim': env.observation_space.shape[0],
@@ -66,11 +102,15 @@ if __name__ == '__main__':
         'action_min': -1,
         'action_max': 1,
         'action_lasting_steps': args.action_lasting_steps,
+
+        'state_min': ss_min,
+        'state_max': ss_max,
         
         'policy_param_init_min': -5,
         'policy_param_init_max': 5,
         
         'dump_path': args.dump_path,
+        'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
 
         'env': env,
         'env_max_h': env.max_steps,
@@ -95,5 +135,8 @@ if __name__ == '__main__':
     # Actually train the model
     dynamics_model.train()
     ## Execute each visualizer routines
-    
-    pass
+    params['model'] = dynamics_model # to pass down to the visualizer routines
+    test_traj_visualizer = TestTrajectoriesVisualization(params)
+    # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
+
+    exit(0)

@@ -7,7 +7,7 @@ from mb_ge.visualization.visualization import VisualizationMethod
 from mb_ge.visualization.plot_utils import progress_bar
     
 class DiscretizedStateSpaceVisualization(VisualizationMethod):
-    def __init__(self, params=None):
+    def __init__(self, params):
         super().__init__(params=params)
         self._process_params(params)
         self._rope_length = .3
@@ -20,18 +20,14 @@ class DiscretizedStateSpaceVisualization(VisualizationMethod):
 
     def _process_params(self, params):
         super()._process_params(params)
-        if 'fixed_grid_min' in params:
-            self._grid_min = params['fixed_grid_min']
+        if 'state_min' in params:
+            self._grid_min = params['state_min']
         else:
-            raise Exception('DiscretizedStateSpaceVisualization _process_params error: fixed_grid_min not in params')
-        if 'fixed_grid_max' in params:
-            self._grid_max = params['fixed_grid_max']
+            raise Exception('DiscretizedStateSpaceVisualization _process_params error: state_min not in params')
+        if 'state_max' in params:
+            self._grid_max = params['state_max']
         else:
-            raise Exception('DiscretizedStateSpaceVisualization _process_params error: fixed_grid_max not in params')
-        if 'fixed_grid_div' in params:
-            self._grid_div = params['fixed_grid_div']
-        else:
-            raise Exception('DiscretizedStateSpaceVisualization _process_params error: fixed_grid_div not in params')
+            raise Exception('DiscretizedStateSpaceVisualization _process_params error: state_max not in params')
         if 'model' in params:
             self.model = params['model']
         else:
@@ -63,7 +59,7 @@ class DiscretizedStateSpaceVisualization(VisualizationMethod):
                                                       size=(self._samples_per_state,
                                                             self._action_dim))
         else:
-            raise Exception('DiscretizedStateSpaceVisualization _process_params error: fixed_grid_min not in params')
+            raise Exception('DiscretizedStateSpaceVisualization _process_params error: state_min not in params')
 
     def _reachable(self, centroid):
         return (np.linalg.norm(centroid[:3]) < 0.3)

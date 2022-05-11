@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mb_ge.visualization.visualization import VisualizationMethod
 
 class TestTrajectoriesVisualization(VisualizationMethod):
-    def __init__(self, params=None):
+    def __init__(self, params):
         super().__init__(params=params)
         self._process_params(params)
         self._pred_error_thresh = .03 # 3 cm
