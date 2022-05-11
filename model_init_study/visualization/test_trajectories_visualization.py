@@ -44,6 +44,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 raise Exception('TestTrajectoriesVisualization _process_params error: action_dim not in params')
         else:
             raise Exception('TestTrajectoriesVisualization _process_params error: dynamics_model_params not in params')
+
+    def set_test_trajectories(self, test_trajectories):
+        self.test_trajectories = test_trajectories
         
     def _execute_test_trajectories_on_model(self):
         controller_list = []
@@ -81,27 +84,25 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 pred_trajs[j,i,:] = mean_pred.copy()
                 disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
-                if pred_errors[j, i] == np.inf or pred_errors[j, i] > 100:
+                if pred_errors[j, i] == np.inf:# or pred_errors[j, i] > 100:
                     pred_errors[j, i] = np.nan
                     
         return pred_trajs, disagrs, pred_errors
         
-    def dump_plots(self, curr_budget, itr=0, show=False):
+    def dump_plots(self, env_name, traj_type, dump_separate=False, show=False):
         ## Get results of test trajectories on model on last model update
         pred_trajs, disagrs, pred_errors = self._execute_test_trajectories_on_model()
 
+        ## Make dump dirs
+        fig_path = os.path.join(self.dump_path, f'{env_name}/disagr')
+        os.makedirs(fig_path, exist_ok=True)        
+        # import pdb; pdb.set_trace()
         ## Compute mean and stddev of trajs disagreement
         mean_disagr = np.nanmean(disagrs, axis=0)
         std_disagr = np.nanstd(disagrs, axis=0)
         ## Compute mean and stddev of trajs prediction error
         mean_pred_error = np.nanmean(pred_errors, axis=0)
         std_pred_error = np.nanstd(pred_errors, axis=0)
-        ## Get xcoord of pred error going above thresh
-        x_thresh = len(mean_pred_error)
-        for i in range(len(mean_pred_error)):
-            if mean_pred_error[i] > self._pred_error_thresh:
-                x_thresh = i
-                break
             
         ## Create fig and ax
         fig = plt.figure()
@@ -119,11 +120,38 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                          mean_disagr+std_disagr,
                          facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean model ensemble disagreeement along successful test trajectories")
+        plt.title(f"Mean model ensemble disagreeement along test trajectories")
         ## Save fig
-        plt.savefig(f"{self.dump_path}/results_{itr}/disagr/test_trajectories_disagr_{curr_budget}",
+        plt.savefig(f"{fig_path}/mean_test_trajectories_disagr_{traj_type}",
                     bbox_inches='tight')
 
+        if dump_separate:
+            for i in range(len(disagrs)):
+                ## Create fig and ax
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ## Prepare plot
+                labels = ['Steps', 'Mean disagreement']
+                limits = [0, len(disagrs[i]),
+                          min(disagrs[i]), max(disagrs[i])]
+                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+                
+                ## Figure for model ensemble disagreement
+                plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
+                # plt.fill_between(range(len(mean_disagr)),
+                                 # mean_disagr-std_disagr,
+                                 # mean_disagr+std_disagr,
+                                 # facecolor='green', alpha=0.5)
+                ## Set plot title
+                plt.title(f"Mean model ensemble disagreeement along single test trajectory")
+                ## Save fig
+                plt.savefig(f"{fig_path}/{i}_test_trajectories_disagr_{traj_type}",
+                            bbox_inches='tight')
+
+        ## Make dump dirs
+        fig_path = os.path.join(self.dump_path, f'{env_name}/pred_error')
+        os.makedirs(fig_path, exist_ok=True)        
+            
         ## Create fig and ax
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -141,17 +169,34 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                          mean_pred_error-std_pred_error,
                          mean_pred_error+std_pred_error,
                          facecolor='green', alpha=0.5)
-        ## Plot red line where prediction error goes above thresh 
-        plt.axvline(x=x_thresh, ls='--', c='red')
-        plt.text(x_thresh+0.1, 1,
-                 f'Mean prediction error above \n {self._pred_error_thresh}m threshold at step {x_thresh}',
-                 rotation=90, size='small')
-        
         ## Set plot title
-        plt.title(f"Mean prediction error along successful test trajectories")
+        plt.title(f"Mean prediction error along test trajectories")
         ## Save fig
-        plt.savefig(f"{self.dump_path}/results_{itr}/pred_error/test_trajectories_pred_error_{curr_budget}",
+        plt.savefig(f"{fig_path}/mean_test_trajectories_pred_error_{traj_type}",
                     bbox_inches='tight')
+
+        if dump_separate:
+            for i in range(len(pred_errors)):
+                ## Create fig and ax
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ## Prepare plot
+                labels = ['Steps', 'Mean disagreement']
+                limits = [0, len(pred_errors[i]),
+                          min(pred_errors[i]), max(pred_errors[i])]
+                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+                
+                ## Figure for model ensemble disagreement
+                plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
+                # plt.fill_between(range(len(mean_disagr)),
+                                 # mean_disagr-std_disagr,
+                                 # mean_disagr+std_disagr,
+                                 # facecolor='green', alpha=0.5)
+                ## Set plot title
+                plt.title(f"Mean prediction error along single test trajectory")
+                ## Save fig
+                plt.savefig(f"{fig_path}/{i}_test_trajectories_pred_error_{traj_type}",
+                            bbox_inches='tight')
 
         if show:
             plt.show()

@@ -1,4 +1,9 @@
 if __name__ == '__main__':
+    ## Get module path
+    import os
+    import model_init_study
+    module_path = os.path.dirname(model_init_study.__file__)
+
     # Local imports
     from model_init_study.models.dynamics_model \
         import DynamicsModel
@@ -24,6 +29,9 @@ if __name__ == '__main__':
     # Gym imports
     import gym
 
+    # Utils imports
+    import numpy as np
+    
     # Argparse imports
     import argparse
     
@@ -44,12 +52,13 @@ if __name__ == '__main__':
     dynamics_model = DynamicsModel
     
     ## Framework methods
-    
  
     if args.init_method == 'random-policies':
         Initializer = RandomPolicyInitializer
     elif args.init_method == 'random-actions':
         Initializer = RandomActionsInitializer
+    else:
+        raise Exception(f"Warning {args.init_method} isn't a valid initializer")
 
     env_register_id = 'BallInCup3d-v0'
     if args.environment == 'ball_in_cup':
@@ -71,6 +80,9 @@ if __name__ == '__main__':
         
     env = gym.make(env_register_id)
 
+    path_to_examples = os.path.join(module_path,
+                                    'examples/',
+                                    args.environment+'_example_trajectories.npz')
     controller_params = \
     {
         'controller_input_dim': env.observation_space.shape[0],
@@ -92,7 +104,8 @@ if __name__ == '__main__':
     params = \
     {
         'n_init_episodes': args.init_episodes,
-        'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
+        # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
+        'n_test_episodes': 2,
         
         'controller_type': NeuralNetworkController,
         'controller_params': controller_params,
@@ -110,7 +123,8 @@ if __name__ == '__main__':
         'policy_param_init_max': 5,
         
         'dump_path': args.dump_path,
-        'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
+        # 'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
+        'path_to_test_trajectories': path_to_examples,
 
         'env': env,
         'env_max_h': env._max_episode_steps,
@@ -133,10 +147,29 @@ if __name__ == '__main__':
         dynamics_model.add_samples_from_transitions(train_transitions[i])
 
     # Actually train the model
-    dynamics_model.train()
+    # dynamics_model.train()
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
+
+    # Visualize example trajectories
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
 
+    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+                                    'examples', dump_separate=True)
+
+    ## Visualize test trajectories
+    # Format test transitions
+    test_trajectories = np.empty((params['n_test_episodes'],
+                                  params['env_max_h'],
+                                  env.observation_space.shape[0]))
+    test_trajectories[:] = np.nan
+
+    for i in range(params['n_test_episodes']):
+        for j in range(params['env_max_h']):
+            test_trajectories[i, j, :] = test_transitions[i][j][1]
+
+    test_traj_visualizer.set_test_trajectories(test_trajectories)
+    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+                                    'test', dump_separate=True)
     exit(0)
