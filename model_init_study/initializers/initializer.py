@@ -22,8 +22,11 @@ class Initializer:
         self._env_max_h = params['env_max_h']
         self._env = params['env']
         self._init_obs = self._env.reset()
-        self._obs_dim = self._env.observation_space.shape[0]
-        self._act_dim = self._env.action_space.shape[0]
+        if isinstance(self._init_obs, dict):
+            self._is_goal_env = True
+            self._init_obs = self._init_obs['observation']
+        self._obs_dim = params['obs_dim']
+        self._act_dim = params['action_dim']
         self.nb_thread = cpu_count() - 1 or 1
         self.policies = None
 
@@ -48,6 +51,8 @@ class Initializer:
         cum_rew = 0
         ## WARNING: need to get previous obs
         for t in range(self._env_max_h):
+            if self._is_goal_env:
+                obs = obs['observation']
             action = self._get_action(idx, obs, t)
             action[action>self._action_max] = self._action_max
             action[action<self._action_min] = self._action_min
@@ -56,6 +61,8 @@ class Initializer:
             cum_rew += reward
             # traj.append(obs)
             # actions.append(action)
+        if self._is_goal_env:
+            obs = obs['observation']
         transitions.append((None, obs))
         ## Return transitions
         return transitions

@@ -84,7 +84,11 @@ if __name__ == '__main__':
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
 
-    obs_dim = env.observation_space['observation'].shape[0] if isinstance(env.observation_space, dict) else env.observation_space.shape[0]
+    obs = env.reset()
+    if isinstance(obs, dict):
+        obs_dim = env.observation_space['observation'].shape[0]
+    else:
+        obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     controller_params = \
     {
@@ -106,6 +110,9 @@ if __name__ == '__main__':
     }
     params = \
     {
+        'obs_dim': obs_dim,
+        'action_dim': act_dim,
+
         'n_init_episodes': args.init_episodes,
         # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
         'n_test_episodes': 2,
