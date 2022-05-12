@@ -83,17 +83,20 @@ if __name__ == '__main__':
     path_to_examples = os.path.join(module_path,
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
+
+    obs_dim = env.observation_space['observation'].shape[0] if isinstance(env.observation_space, dict) else env.observation_space.shape[0]
+    act_dim = env.action_space.shape[0]
     controller_params = \
     {
-        'controller_input_dim': env.observation_space.shape[0],
-        'controller_output_dim': env.action_space.shape[0],
+        'controller_input_dim': obs_dim,
+        'controller_output_dim': act_dim,
         'n_hidden_layers': 2,
         'n_neurons_per_hidden': 10
     }
     dynamics_model_params = \
     {
-        'obs_dim': env.observation_space.shape[0],
-        'action_dim': env.action_space.shape[0],
+        'obs_dim': obs_dim,
+        'action_dim': act_dim,
         'dynamics_model_type': 'prob', # possible values: prob, det
         'ensemble_size': 4, # only used if dynamics_model_type == prob
         'layer_size': 500,
@@ -162,7 +165,7 @@ if __name__ == '__main__':
     # Format test transitions
     test_trajectories = np.empty((params['n_test_episodes'],
                                   params['env_max_h'],
-                                  env.observation_space.shape[0]))
+                                  obs_dim))
     test_trajectories[:] = np.nan
 
     for i in range(params['n_test_episodes']):
