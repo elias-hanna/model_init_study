@@ -18,7 +18,7 @@ class VisualizationMethod():
                      ax_labels=['X', 'Y', 'Z'],
                      limits=[0., 1., 0., 1., 0., 1.]):
         ## Set plot labels
-        ax.set_xlabel('X')
+        ax.set_xlabel('Number of steps on environment')
         ax.set_ylabel('Y')
         
         ## Set plot limits

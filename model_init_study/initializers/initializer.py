@@ -22,6 +22,7 @@ class Initializer:
         self._env_max_h = params['env_max_h']
         self._env = params['env']
         self._init_obs = self._env.reset()
+        self._is_goal_env = False
         if isinstance(self._init_obs, dict):
             self._is_goal_env = True
             self._init_obs = self._init_obs['observation']

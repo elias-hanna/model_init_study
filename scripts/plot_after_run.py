@@ -1,20 +1,14 @@
+## Call this piece of code from the top folder containing all env data ##
 if __name__ == '__main__':
     # Local imports
+    from model_init_study.visualization.test_trajectories_visualization \
+        import TestTrajectoriesVisualization
+
     from model_init_study.models.dynamics_model \
         import DynamicsModel
 
     from model_init_study.controller.nn_controller \
         import NeuralNetworkController
-
-    from model_init_study.initializers.random_policy_initializer \
-        import RandomPolicyInitializer
-    from model_init_study.initializers.random_actions_initializer \
-        import RandomActionsInitializer
-
-    from model_init_study.visualization.discretized_state_space_visualization \
-        import DiscretizedStateSpaceVisualization
-    from model_init_study.visualization.test_trajectories_visualization \
-        import TestTrajectoriesVisualization
 
     # Env imports
     import gym
@@ -22,21 +16,18 @@ if __name__ == '__main__':
     import mb_ge ## Contains ball in cup
     import redundant_arm ## contains redundant arm
     
-
     # Utils imports
     import numpy as np
-    import argparse
     import os
+    import argparse
     import model_init_study
     module_path = os.path.dirname(model_init_study.__file__)
-    
+
     parser = argparse.ArgumentParser(description='Process run parameters.')
 
     parser.add_argument('--init-method', type=str, default='random-policies')
 
     parser.add_argument('--init-episodes', type=int, default='10')
-
-    parser.add_argument('--action-lasting-steps', type=int, default='5')
 
     parser.add_argument('--dump-path', type=str, default='default_dump/')
 
@@ -48,13 +39,6 @@ if __name__ == '__main__':
     
     ## Framework methods
  
-    if args.init_method == 'random-policies':
-        Initializer = RandomPolicyInitializer
-    elif args.init_method == 'random-actions':
-        Initializer = RandomActionsInitializer
-    else:
-        raise Exception(f"Warning {args.init_method} isn't a valid initializer")
-
     env_register_id = 'BallInCup3d-v0'
     if args.environment == 'ball_in_cup':
         env_register_id = 'BallInCup3d-v0'
@@ -78,13 +62,13 @@ if __name__ == '__main__':
     path_to_examples = os.path.join(module_path,
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
-
     obs = env.reset()
     if isinstance(obs, dict):
         obs_dim = env.observation_space['observation'].shape[0]
     else:
         obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
+    
     controller_params = \
     {
         'controller_input_dim': obs_dim,
@@ -119,7 +103,6 @@ if __name__ == '__main__':
 
         'action_min': -1,
         'action_max': 1,
-        'action_lasting_steps': args.action_lasting_steps,
 
         'state_min': ss_min,
         'state_max': ss_max,
@@ -134,61 +117,65 @@ if __name__ == '__main__':
         'env': env,
         'env_max_h': env._max_episode_steps,
     }
+    params['model'] = None
     
-    ## Instanciate the initializer
-    initializer = Initializer(params)
+    rep_folders = next(os.walk(f'.'))[1]
 
-    ## Execute the initializer policies on the environment
-    transitions = initializer.run()
+    rep_folders = [x for x in rep_folders if (x.isdigit())]
+    
+    # import pdb; pdb.set_trace()
 
-    ## Separate training and test
-    train_transitions = transitions[:-params['n_test_episodes']]
-    test_transitions = transitions[-params['n_test_episodes']:]
+    rep_data = np.load(f'{rep_folders[0]}/{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
 
-    ## Train the model
-    dynamics_model = DynamicsModel(params)
-    # Add data to replay buffer
-    for i in range(len(train_transitions)):
-        dynamics_model.add_samples_from_transitions(train_transitions[i])
+    tmp_data = rep_data['test_pred_trajs']
 
-    # Actually train the model
-    dynamics_model.train()
-    ## Execute each visualizer routines
-    params['model'] = dynamics_model # to pass down to the visualizer routines
+    ## Get parameters (should do a params.npz... cba)
+    trajs_per_rep = len(tmp_data)
+    n_total_trajs = trajs_per_rep*len(rep_folders)
+    task_h = len(tmp_data[0])
+    obs_dim = len(tmp_data[0][0])
+    
+    test_pred_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    test_disagrs = np.empty((n_total_trajs, task_h))
+    test_pred_errors = np.empty((n_total_trajs, task_h))
+
+    examples_pred_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    examples_disagrs = np.empty((n_total_trajs, task_h))
+    examples_pred_errors = np.empty((n_total_trajs, task_h))
+
+    rep_cpt = 0
+    
+    for rep_path in rep_folders:
+        rep_data = np.load(f'{rep_path}/{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
+
+        test_pred_trajs[rep_cpt*trajs_per_rep:
+                        rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_pred_trajs']
+        test_disagrs[rep_cpt*trajs_per_rep:
+                     rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_disagrs']
+        test_pred_errors[rep_cpt*trajs_per_rep:
+                         rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_pred_errors']
+
+        examples_pred_trajs[rep_cpt*trajs_per_rep:
+                        rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_pred_trajs']
+        examples_disagrs[rep_cpt*trajs_per_rep:
+                     rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_disagrs']
+        examples_pred_errors[rep_cpt*trajs_per_rep:
+                         rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_pred_errors']
+
+        rep_cpt += 1
+        
+    test_model_trajs = (test_pred_trajs,
+                        test_disagrs,
+                        test_pred_errors,)
+    
+    examples_model_trajs = (examples_pred_trajs,
+                            examples_disagrs,
+                            examples_pred_errors,)
+
     test_traj_visualizer = TestTrajectoriesVisualization(params)
 
-    # Visualize example trajectories
-    # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
+    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+                                    'all_test', model_trajs=test_model_trajs)
 
-    examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
-        f'{args.environment}_{args.init_method}_{args.init_episodes}',
-        'examples', dump_separate=True)
-
-    ## Visualize test trajectories
-    # Format test transitions
-    test_trajectories = np.empty((params['n_test_episodes'],
-                                  params['env_max_h'],
-                                  obs_dim))
-    test_trajectories[:] = np.nan
-
-    for i in range(params['n_test_episodes']):
-        for j in range(params['env_max_h']):
-            test_trajectories[i, j, :] = test_transitions[i][j][1]
-
-    test_traj_visualizer.set_test_trajectories(test_trajectories)
-    test_pred_trajs, test_disagrs, test_pred_errors = test_traj_visualizer.dump_plots(
-        f'{args.environment}_{args.init_method}_{args.init_episodes}',
-        'test', dump_separate=True)
-
-    data_path = os.path.join(
-        args.dump_path,
-        f'{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
-    
-    np.savez(data_path,
-             test_pred_trajs=test_pred_trajs,
-             test_disagrs=test_disagrs,
-             test_pred_errors=test_pred_errors,
-             examples_pred_trajs=examples_pred_trajs,
-             examples_disagrs=examples_disagrs,
-             examples_pred_errors=examples_pred_errors,)
-    exit(0)
+    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+                                    'all_examples', model_trajs=examples_model_trajs)

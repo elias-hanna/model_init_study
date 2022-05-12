@@ -89,12 +89,16 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                     
         return pred_trajs, disagrs, pred_errors
         
-    def dump_plots(self, env_name, traj_type, dump_separate=False, show=False):
+    def dump_plots(self, env_name, traj_type, dump_separate=False, show=False, model_trajs=None):
         ## Get results of test trajectories on model on last model update
-        pred_trajs, disagrs, pred_errors = self._execute_test_trajectories_on_model()
-
+        if model_trajs == None:
+            pred_trajs, disagrs, pred_errors = self._execute_test_trajectories_on_model()
+        else:
+            pred_trajs, disagrs, pred_errors = model_trajs
+            
         ## Make dump dirs
         fig_path = os.path.join(self.dump_path, f'{env_name}/disagr')
+        # import pdb; pdb.set_trace()
         os.makedirs(fig_path, exist_ok=True)        
         # import pdb; pdb.set_trace()
         ## Compute mean and stddev of trajs disagreement
@@ -107,6 +111,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         ## Create fig and ax
         fig = plt.figure()
         ax = fig.add_subplot(111)
+        ax.set_ylabel('Ensemble disagreement')
         ## Prepare plot
         labels = ['Steps', 'Mean disagreement']
         limits = [0, len(mean_disagr),
@@ -130,6 +135,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
+                ax.set_ylabel('Ensemble disagreement')
                 ## Prepare plot
                 labels = ['Steps', 'Mean disagreement']
                 limits = [0, len(disagrs[i]),
@@ -155,6 +161,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         ## Create fig and ax
         fig = plt.figure()
         ax = fig.add_subplot(111)
+        ax.set_ylabel('Prediction Error')
         ## Prepare plot
         labels = ['Steps', 'Mean prediction error']
         limits = [0, len(mean_pred_error),
@@ -180,6 +187,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
+                ax.set_ylabel('Prediction Error')
                 ## Prepare plot
                 labels = ['Steps', 'Mean disagreement']
                 limits = [0, len(pred_errors[i]),
@@ -201,3 +209,5 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         if show:
             plt.show()
         plt.close()
+
+        return pred_trajs, disagrs, pred_errors
