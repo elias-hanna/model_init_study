@@ -147,7 +147,7 @@ if __name__ == '__main__':
         dynamics_model.add_samples_from_transitions(train_transitions[i])
 
     # Actually train the model
-    # dynamics_model.train()
+    dynamics_model.train()
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)

@@ -14,7 +14,7 @@ for env in "${environments[@]}"; do
 	cd $rep
 	for method in "${methods[@]}"; do
 	    for ep in "${episodes[@]}"; do
-		python ../../launch_exp.py --init-method $method --init-episodes $ep --environment $env --dump-path .
+		python ../../../scripts/launch_exp.py --init-method $method --init-episodes $ep --environment $env --dump-path .
 	    done
 	done
 	cd ..
