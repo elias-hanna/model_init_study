@@ -174,8 +174,12 @@ if __name__ == '__main__':
 
     test_traj_visualizer = TestTrajectoriesVisualization(params)
 
-    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+    test_traj_visualizer.dump_plots(args.environment,
+                                    args.init_method,
+                                    args.init_episodes,
                                     'all_test', model_trajs=test_model_trajs)
 
-    test_traj_visualizer.dump_plots(f'{args.environment}_{args.init_method}_{args.init_episodes}',
+    test_traj_visualizer.dump_plots(args.environment,
+                                    args.init_method,
+                                    args.init_episodes,
                                     'all_examples', model_trajs=examples_model_trajs)

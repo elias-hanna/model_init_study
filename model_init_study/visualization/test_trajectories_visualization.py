@@ -3,7 +3,7 @@ import copy
 import os
 import matplotlib.pyplot as plt
 
-from mb_ge.visualization.visualization import VisualizationMethod
+from model_init_study.visualization.visualization import VisualizationMethod
 
 class TestTrajectoriesVisualization(VisualizationMethod):
     def __init__(self, params):
@@ -89,7 +89,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                     
         return pred_trajs, disagrs, pred_errors
         
-    def dump_plots(self, env_name, traj_type, dump_separate=False, show=False, model_trajs=None):
+    def dump_plots(self, env_name, init_name, num_episodes, traj_type, dump_separate=False, show=False, model_trajs=None):
         ## Get results of test trajectories on model on last model update
         if model_trajs == None:
             pred_trajs, disagrs, pred_errors = self._execute_test_trajectories_on_model()
@@ -97,10 +97,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
             pred_trajs, disagrs, pred_errors = model_trajs
             
         ## Make dump dirs
-        fig_path = os.path.join(self.dump_path, f'{env_name}/disagr')
-        # import pdb; pdb.set_trace()
+        run_name = f'{env_name}_{init_name}_{num_episodes}'
+        fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
         os.makedirs(fig_path, exist_ok=True)        
-        # import pdb; pdb.set_trace()
         ## Compute mean and stddev of trajs disagreement
         mean_disagr = np.nanmean(disagrs, axis=0)
         std_disagr = np.nanstd(disagrs, axis=0)
@@ -111,9 +110,8 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         ## Create fig and ax
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.set_ylabel('Ensemble disagreement')
         ## Prepare plot
-        labels = ['Steps', 'Mean disagreement']
+        labels = ['Number of steps on environment', 'Mean ensemble disagreement']
         limits = [0, len(mean_disagr),
                   min(mean_disagr-std_disagr), max(mean_disagr+std_disagr)]
         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
@@ -125,7 +123,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                          mean_disagr+std_disagr,
                          facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean model ensemble disagreeement along test trajectories")
+        plt.title(f"Mean model ensemble disagreeement along test trajectories\n {init_name} on {num_episodes} episodes")
         ## Save fig
         plt.savefig(f"{fig_path}/mean_test_trajectories_disagr_{traj_type}",
                     bbox_inches='tight')
@@ -135,9 +133,8 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
-                ax.set_ylabel('Ensemble disagreement')
                 ## Prepare plot
-                labels = ['Steps', 'Mean disagreement']
+                labels = ['Number of steps on environment', 'Ensemble disagreement']
                 limits = [0, len(disagrs[i]),
                           min(disagrs[i]), max(disagrs[i])]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
@@ -149,21 +146,20 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                                  # mean_disagr+std_disagr,
                                  # facecolor='green', alpha=0.5)
                 ## Set plot title
-                plt.title(f"Mean model ensemble disagreeement along single test trajectory")
+                plt.title(f"Mean model ensemble disagreeement along single test trajectory\n {init_name} on {num_episodes} episodes")
                 ## Save fig
                 plt.savefig(f"{fig_path}/{i}_test_trajectories_disagr_{traj_type}",
                             bbox_inches='tight')
 
         ## Make dump dirs
-        fig_path = os.path.join(self.dump_path, f'{env_name}/pred_error')
+        fig_path = os.path.join(self.dump_path, f'{run_name}/pred_error')
         os.makedirs(fig_path, exist_ok=True)        
             
         ## Create fig and ax
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.set_ylabel('Prediction Error')
         ## Prepare plot
-        labels = ['Steps', 'Mean prediction error']
+        labels = ['Number of steps on environment', 'Mean prediction error']
         limits = [0, len(mean_pred_error),
                   # min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
                   0, 10]
@@ -187,9 +183,8 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
-                ax.set_ylabel('Prediction Error')
                 ## Prepare plot
-                labels = ['Steps', 'Mean disagreement']
+                labels = ['Number of steps on environment', 'Prediction Error']
                 limits = [0, len(pred_errors[i]),
                           min(pred_errors[i]), max(pred_errors[i])]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)

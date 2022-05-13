@@ -161,7 +161,9 @@ if __name__ == '__main__':
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
 
     examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
-        f'{args.environment}_{args.init_method}_{args.init_episodes}',
+        args.environment,
+        args.init_method,
+        args.init_episodes,
         'examples', dump_separate=True)
 
     ## Visualize test trajectories
@@ -177,8 +179,15 @@ if __name__ == '__main__':
 
     test_traj_visualizer.set_test_trajectories(test_trajectories)
     test_pred_trajs, test_disagrs, test_pred_errors = test_traj_visualizer.dump_plots(
-        f'{args.environment}_{args.init_method}_{args.init_episodes}',
+        args.environment,
+        args.init_method,
+        args.init_episodes,
         'test', dump_separate=True)
+
+    test_traj_visualizer.dump_plots(args.environment,
+                                    args.init_method,
+                                    args.init_episodes,
+                                    'examples', dump_separate=True)
 
     data_path = os.path.join(
         args.dump_path,
