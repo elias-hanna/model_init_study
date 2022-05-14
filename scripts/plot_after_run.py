@@ -143,6 +143,7 @@ if __name__ == '__main__':
     examples_disagrs = np.empty((n_total_trajs, task_h))
     examples_pred_errors = np.empty((n_total_trajs, task_h))
 
+
     rep_cpt = 0
     
     for rep_path in rep_folders:
@@ -161,6 +162,72 @@ if __name__ == '__main__':
                      rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_disagrs']
         examples_pred_errors[rep_cpt*trajs_per_rep:
                          rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_pred_errors']
+
+        rep_cpt += 1
+        
+    test_model_trajs = (test_pred_trajs,
+                        test_disagrs,
+                        test_pred_errors,)
+    
+    examples_model_trajs = (examples_pred_trajs,
+                            examples_disagrs,
+                            examples_pred_errors,)
+
+    test_traj_visualizer = TestTrajectoriesVisualization(params)
+
+    test_traj_visualizer.dump_plots(args.environment,
+                                    args.init_method,
+                                    args.init_episodes,
+                                    'all_test', model_trajs=test_model_trajs)
+
+    test_traj_visualizer.dump_plots(args.environment,
+                                    args.init_method,
+                                    args.init_episodes,
+                                    'all_examples', model_trajs=examples_model_trajs)
+
+####################################################################################wip
+    n_init_method = 2
+    init_methods = ['random_policies', 'random_actions']
+    n_init_episodes = 4
+    init_episodes = [5, 10, 15, 20]
+    
+    test_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
+    test_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+    test_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+
+    examples_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
+    examples_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+    examples_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+    
+
+    rep_cpt = 0
+    
+    for rep_path in rep_folders:
+        for i in range(n_init_method):
+            init_method =  init_methods[i]
+            for j in range(n_init_episodes):
+                init_episode = init_episodes[j]:
+                rep_data = np.load(f'{rep_path}/{args.environment}_{init_method}_{init_episode}_data.npz')
+
+                test_pred_trajs[i,j,rep_cpt*trajs_per_rep:
+                                rep_cpt*trajs_per_rep
+                                + trajs_per_rep] =rep_data['test_pred_trajs']
+                test_disagrs[i,j,rep_cpt*trajs_per_rep:
+                             rep_cpt*trajs_per_rep
+                             + trajs_per_rep] = rep_data['test_disagrs']
+                test_pred_errors[i,j,rep_cpt*trajs_per_rep:
+                                 rep_cpt*trajs_per_rep
+                                 + trajs_per_rep] = rep_data['test_pred_errors']
+                
+                examples_pred_trajs[i,j,rep_cpt*trajs_per_rep:
+                                    rep_cpt*trajs_per_rep
+                                    + trajs_per_rep] = rep_data['examples_pred_trajs']
+                examples_disagrs[i,j,rep_cpt*trajs_per_rep:
+                                 rep_cpt*trajs_per_rep
+                                 + trajs_per_rep] = rep_data['examples_disagrs']
+                examples_pred_errors[i,j,rep_cpt*trajs_per_rep:
+                                     rep_cpt*trajs_per_rep
+                                     + trajs_per_rep] = rep_data['examples_pred_errors']
 
         rep_cpt += 1
         

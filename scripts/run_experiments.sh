@@ -37,4 +37,14 @@ for env in "${environments[@]}"; do
     done
     cd ..
 done
+
+wait
+## Plot means (only means) over replications on same plot
+
+for env in "${environments[@]}"; do
+    cd ${env}_results
+    echo "Processing following folder"; pwd
+    python ../../scripts/plot_after_run_same_plot.py --environment $env --dump-path .
+    cd ..
+done
     

@@ -16,6 +16,15 @@ if __name__ == '__main__':
     from model_init_study.visualization.test_trajectories_visualization \
         import TestTrajectoriesVisualization
 
+    from model_init_study.visualization.fetch_pick_and_place_separator \
+        import FetchPickAndPlaceSeparator
+    from model_init_study.visualization.ant_separator \
+        import AntSeparator
+    from model_init_study.visualization.ball_in_cup_separator \
+        import BallInCupSeparator
+    from model_init_study.visualization.redundant_arm_place_separator \
+        import RedundantArmSeparator
+    
     # Env imports
     import gym
     import diversity_algorithms.environments.env_imports ## Contains deterministic ant + fetch
@@ -58,18 +67,22 @@ if __name__ == '__main__':
     env_register_id = 'BallInCup3d-v0'
     if args.environment == 'ball_in_cup':
         env_register_id = 'BallInCup3d-v0'
+        separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
     if args.environment == 'redundant_arm':
         env_register_id = 'RedundantArm-v0'
+        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
     if args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
+        separator = FetchPickAndPlaceSeparator
         ss_min = -1
         ss_max = 1
     if args.environment == 'ant':
         env_register_id = 'AntBulletEnvDeterministic-v0'
+        separator = AntSeparator
         ss_min = -10
         ss_max = 10
         
@@ -108,6 +121,8 @@ if __name__ == '__main__':
         'obs_dim': obs_dim,
         'action_dim': act_dim,
 
+        'separator': separator,
+        
         'n_init_episodes': args.init_episodes,
         # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
         'n_test_episodes': 2,
