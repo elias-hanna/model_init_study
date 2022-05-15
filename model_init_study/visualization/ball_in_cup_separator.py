@@ -1,6 +1,8 @@
-import traj_separators
+# import traj_separators
+from model_init_study.visualization.traj_separators import TrajectorySeparator
 
-class BallInCupSeparator(traj_separators.TrajectorySeparator):
+# class BallInCupSeparator(traj_separators.TrajectorySeparator):
+class BallInCupSeparator(TrajectorySeparator):
     def __init__(self):
         pass
 

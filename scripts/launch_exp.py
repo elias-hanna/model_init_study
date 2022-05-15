@@ -22,7 +22,7 @@ if __name__ == '__main__':
         import AntSeparator
     from model_init_study.visualization.ball_in_cup_separator \
         import BallInCupSeparator
-    from model_init_study.visualization.redundant_arm_place_separator \
+    from model_init_study.visualization.redundant_arm_separator \
         import RedundantArmSeparator
     
     # Env imports

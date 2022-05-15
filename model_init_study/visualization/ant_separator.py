@@ -1,6 +1,8 @@
-import traj_separators
+# import traj_separators
+from model_init_study.visualization.traj_separators import TrajectorySeparator
 
-class AntSeparator(traj_separators.TrajectorySeparator):
+# class AntSeparator(traj_separators.TrajectorySeparator):
+class AntSeparator(TrajectorySeparator):
     def __init__(self):
         pass
 

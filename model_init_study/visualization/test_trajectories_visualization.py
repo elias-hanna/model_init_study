@@ -13,7 +13,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         
     def _process_params(self, params):
         super()._process_params(params)
-        self.traj_separator = params['separator']
+        self.traj_separator = params['separator']()
         if 'path_to_test_trajectories' in params:
             self.test_trajectories = np.load(params['path_to_test_trajectories'])['examples']
             self.test_params = np.load(params['path_to_test_trajectories'])['params']
@@ -90,12 +90,15 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                     
         return pred_trajs, disagrs, pred_errors
 
-    def compute_pred_error(self, traj1):
-        pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
-        
-        for i in range(len(self.traj1)):
-            for j in range(self.env_max_h):
-                pred_errors[i,j] = np.linalg.norm(traj1[i,j,:]-self.test_trajectories[i,j,:])
+    def compute_pred_error(self, traj1, traj2):
+        pred_errors = np.empty((len(traj1), len(self.test_trajectories), self.env_max_h))
+        # pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
+        import pdb; pdb.set_trace()
+        for i in range(len(traj1)):
+            for j in range(len(self.test_trajectories)):
+                for t in range(self.env_max_h):
+                    pred_errors[i,j] = np.linalg.norm(traj1[i,j,:]-self.test_trajectories[j,t,:])
+                    # pred_errors[i,j, t] = np.linalg.norm(traj1[i,j,:]-traj2[i,j,:])
 
         return pred_errors
     
@@ -131,7 +134,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         ## Make dump dirs
         run_name = f'{env_name}_{init_name}_{num_episodes}'
         fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
-        os.makedirs(fig_path, exist_ok=True)        
+        os.makedirs(fig_path, exist_ok=True)
         ## Compute mean and stddev of trajs disagreement
         mean_disagr = np.nanmean(disagrs, axis=0)
         std_disagr = np.nanstd(disagrs, axis=0)

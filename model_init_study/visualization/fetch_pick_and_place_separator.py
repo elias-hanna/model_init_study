@@ -1,6 +1,8 @@
-import traj_separators
+# import traj_separators
+from model_init_study.visualization.traj_separators import TrajectorySeparator
 
-class FetchPickAndPlaceSeparator(traj_separators.TrajectorySeparator):
+class FetchPickAndPlaceSeparator(TrajectorySeparator):
+# class FetchPickAndPlaceSeparator(traj_separators.TrajectorySeparator):
     def __init__(self):
         pass
 
