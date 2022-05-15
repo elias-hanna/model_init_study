@@ -30,6 +30,9 @@ if __name__ == '__main__':
     import os
     import argparse
     import model_init_study
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    
     module_path = os.path.dirname(model_init_study.__file__)
 
     parser = argparse.ArgumentParser(description='Process run parameters.')
@@ -201,7 +204,7 @@ if __name__ == '__main__':
 
 ####################################################################################wip
     n_init_method = 2
-    init_methods = ['random_policies', 'random_actions']
+    init_methods = ['random-policies', 'random-actions']
     n_init_episodes = 4
     init_episodes = [5, 10, 15, 20]
     
@@ -209,9 +212,9 @@ if __name__ == '__main__':
     test_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
     test_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
 
-    examples_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
-    examples_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
-    examples_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+    example_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
+    example_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
+    example_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
     
 
     ## Do a new plot
@@ -227,7 +230,7 @@ if __name__ == '__main__':
     example_ax_disagr = example_fig_disagr.add_subplot(111)
 
     example_fig_pred_error = plt.figure()
-    example_ax_pred_error = fig_pred_error.add_subplot(111)
+    example_ax_pred_error = example_fig_pred_error.add_subplot(111)
 
     # Init limits for each fig
     test_limits_disagr = [0, env._max_episode_steps,
@@ -245,6 +248,12 @@ if __name__ == '__main__':
     example_labels_disagr = ['Number of steps on environment', 'Mean ensemble disagreement']
     example_labels_pred_error = ['Number of steps on environment', 'Mean prediction error']
 
+    
+    evenly_spaced_interval = np.linspace(0, 1, n_init_method*n_init_episodes)
+    colors = [cm.rainbow(x) for x in evenly_spaced_interval]
+
+    colors = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes)
+    
     for i in range(n_init_method):
         init_method =  init_methods[i]
         for j in range(n_init_episodes):
@@ -288,17 +297,19 @@ if __name__ == '__main__':
             ## Update plot params
             if min(test_mean_disagr) < test_limits_disagr[2]:
                 test_limits_disagr[2] = min(test_mean_disagr)
-            if max(test_mean_disagr) < test_limits_disagr[3]:
+            if max(test_mean_disagr) > test_limits_disagr[3]:
                 test_limits_disagr[3] = max(test_mean_disagr)
             ## Figure for model ensemble disagreement
-            test_ax_disagr.plot(range(env._max_episode_steps), test_mean_disagr, 'k-')
+            test_ax_disagr.plot(range(env._max_episode_steps), test_mean_disagr, '-',
+                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(test_mean_pred_error) < test_limits_pred_error[2]:
                 test_limits_pred_error[2] = min(test_mean_pred_error)
-            if max(test_mean_pred_error) < test_limits_pred_error[3]:
+            if max(test_mean_pred_error) > test_limits_pred_error[3]:
                 test_limits_pred_error[3] = max(test_mean_pred_error)
             ## Figure for pred_error
-            test_ax_pred_error.plot(range(env._max_episode_steps), test_mean_pred_error, 'k-')
+            test_ax_pred_error.plot(range(env._max_episode_steps), test_mean_pred_error, '-',
+                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
 
             ## On example trajs
             ## Compute mean and stddev of trajs disagreement
@@ -314,14 +325,16 @@ if __name__ == '__main__':
             if max(example_mean_disagr) < example_limits_disagr[3]:
                 example_limits_disagr[3] = max(example_mean_disagr)
             ## Figure for model ensemble disagreement
-            example_ax_disagr.plot(range(env._max_episode_steps), example_mean_disagr, 'k-')
+            example_ax_disagr.plot(range(env._max_episode_steps), example_mean_disagr, '-',
+                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
                 example_limits_pred_error[2] = min(example_mean_pred_error)
             if max(example_mean_pred_error) < example_limits_pred_error[3]:
                 example_limits_pred_error[3] = max(example_mean_pred_error)
             ## Figure for pred_error
-            example_ax_pred_error.plot(range(env._max_episode_steps), example_mean_pred_error, 'k-')
+            example_ax_pred_error.plot(range(env._max_episode_steps), example_mean_pred_error,'-',
+                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
 
             # if plot_stddev:
                 # ax_disagr.fill_between(range(len(mean_disagr)),
@@ -329,7 +342,14 @@ if __name__ == '__main__':
                                        # mean_disagr+std_disagr,
                                        # facecolor='green', alpha=0.5)
 
-
+    test_limits_disagr = [0, env._max_episode_steps,
+                     0, 10]
+    test_limits_pred_error = [0, env._max_episode_steps,
+                         0, 10]
+    example_limits_disagr = [0, env._max_episode_steps,
+                     0, 10]
+    example_limits_pred_error = [0, env._max_episode_steps,
+                         0, 10]
     ## Plot params
     # Set plot labels
     test_ax_disagr.set_xlabel(test_labels_disagr[0])
@@ -366,6 +386,14 @@ if __name__ == '__main__':
     
     example_ax_pred_error.set_xlim(x_min,x_max)
     example_ax_pred_error.set_ylim(y_min,y_max)
+
+    ## Set legend
+
+    test_ax_disagr.legend()
+    test_ax_pred_error.legend()
+
+    example_ax_disagr.legend()
+    example_ax_pred_error.legend()
 
     ## Set plot title
     test_ax_disagr.set_title(f"Mean model ensemble disagreeement along test trajectories")

@@ -91,14 +91,18 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
-        pred_errors = np.empty((len(traj1), len(self.test_trajectories), self.env_max_h))
+        pred_errors = np.empty((len(traj1), self.env_max_h))
+        # pred_errors = np.empty((len(traj1), len(self.test_trajectories), self.env_max_h))
         # pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
-        import pdb; pdb.set_trace()
-        for i in range(len(traj1)):
-            for j in range(len(self.test_trajectories)):
-                for t in range(self.env_max_h):
-                    pred_errors[i,j] = np.linalg.norm(traj1[i,j,:]-self.test_trajectories[j,t,:])
-                    # pred_errors[i,j, t] = np.linalg.norm(traj1[i,j,:]-traj2[i,j,:])
+        for i in range(len(traj1)//2):
+            # for j in range(len(self.test_trajectories)):
+            for t in range(self.env_max_h):
+                # import pdb; pdb.set_trace()
+                test = np.linalg.norm(traj1[i*len(self.test_trajectories),t,:]-traj2[0,t,:])
+                # pred_errors[i*len(self.test_trajectories),t] = np.linalg.norm(traj1[i*len(self.test_trajectories),t,:]-self.test_trajectories[0,t,:])
+                pred_errors[i*len(self.test_trajectories),t] = test
+                pred_errors[i*len(self.test_trajectories)+1,t] = np.linalg.norm(traj1[i*len(self.test_trajectories)+1,t,:]-traj2[1,t,:])
+                # pred_errors[i,j, t] = np.linalg.norm(traj1[i,j,:]-traj2[i,j,:])
 
         return pred_errors
     
