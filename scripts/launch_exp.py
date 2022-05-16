@@ -30,7 +30,6 @@ if __name__ == '__main__':
     import diversity_algorithms.environments.env_imports ## Contains deterministic ant + fetch
     import mb_ge ## Contains ball in cup
     import redundant_arm ## contains redundant arm
-    
 
     # Utils imports
     import numpy as np

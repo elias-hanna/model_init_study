@@ -343,13 +343,13 @@ if __name__ == '__main__':
                                        # facecolor='green', alpha=0.5)
 
     test_limits_disagr = [0, env._max_episode_steps,
-                     0, 10]
+                          0, 10]
     test_limits_pred_error = [0, env._max_episode_steps,
-                         0, 10]
+                              0, 10]
     example_limits_disagr = [0, env._max_episode_steps,
-                     0, 10]
+                             0, 10]
     example_limits_pred_error = [0, env._max_episode_steps,
-                         0, 10]
+                                 0, 10]
     ## Plot params
     # Set plot labels
     test_ax_disagr.set_xlabel(test_labels_disagr[0])
@@ -407,7 +407,7 @@ if __name__ == '__main__':
                             bbox_inches='tight')
     example_fig_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_disagr",
                                bbox_inches='tight')
-    example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_exmaple_trajectories_pred_error",
+    example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
                                bbox_inches='tight')
     plt.show()
     # test_model_trajs = (test_pred_trajs,
