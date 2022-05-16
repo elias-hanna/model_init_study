@@ -1,8 +1,8 @@
 # Model Dependancies
-from mb_ge.models.deterministic_model import DeterministicDynModel
-from mb_ge.models.probabilistic_ensemble import ProbabilisticEnsemble
-from mb_ge.utils.simple_replay_buffer import SimpleReplayBuffer
-import mb_ge.utils.pytorch_util as ptu
+from model_init_study.models.deterministic_model import DeterministicDynModel
+from model_init_study.models.probabilistic_ensemble import ProbabilisticEnsemble
+from model_init_study.utils.simple_replay_buffer import SimpleReplayBuffer
+import model_init_study.utils.pytorch_util as ptu
 
 # torch import
 import torch
@@ -21,7 +21,7 @@ class DynamicsModel():
         
         ## INIT MODEL ##
         if self._dynamics_model_type == "prob":
-            from mb_ge.models.mbrl import MBRLTrainer
+            from model_init_study.models.mbrl import MBRLTrainer
             variant = dict(
                 mbrl_kwargs=dict(
                     ensemble_size=self._ensemble_size,
@@ -41,7 +41,7 @@ class DynamicsModel():
 
         # ensemble somehow cant run in parallel evaluations
         elif dynamics_model_type == "det":
-            from mb_ge.models.mbrl_det import MBRLTrainer
+            from model_init_study.models.mbrl_det import MBRLTrainer
             dynamics_model = DeterministicDynModel(obs_dim=self._obs_dim,
                                                    action_dim=self._action_dim,
                                                    hidden_size=self._layer_size)

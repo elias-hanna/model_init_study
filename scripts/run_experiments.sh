@@ -1,7 +1,7 @@
 #!/bin/bash
 # run_experiments
 
-#environments=(ant ball_in_cup redundant_arm fetch_pick_and_place)
+# environments=(ant ball_in_cup redundant_arm fetch_pick_and_place)
 environments=(ant)
 reps=(0 1 2 3 4 5 6 7 8 9)
 episodes=(5 10 15 20)

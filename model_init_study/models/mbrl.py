@@ -121,13 +121,19 @@ class MBRLTrainer(TorchTrainer):
                 num_epochs_since_last_update = 0
             else:
                 num_epochs_since_last_update += 1
-
-            #print("Num epochs: ", num_epochs, "    Training Loss: ", train_loss/num_batches)
-            #print("Num epochs: ", num_epochs, "    Holdout Loss: ", holdout_loss)
-            #print("Num epochs: ", num_epochs, "    Errors: ", holdout_errors)
             
-            num_epochs += 1
+            # print("Num epochs: ", num_epochs, "    Training Loss: ", train_loss/num_batches)
+            # print("Num epochs: ", num_epochs, "    Holdout Loss: ", holdout_loss)
+            # print("Num epochs: ", num_epochs, "    Errors: ", holdout_errors)
+            ## Prettier print
+            # print("Num epochs: ", num_epochs, "    Training Loss: ",
+                  # float(train_loss.detach()/num_batches))
+            # print("Num epochs: ", num_epochs, "    Holdout Loss: ",
+                  # float(holdout_loss))
+            # print("Num epochs: ", num_epochs, "    Errors: ",
+                  # [float(err) for err in holdout_errors])
 
+            num_epochs += 1
         self.ensemble.elites = np.argsort(holdout_losses)
 
         if self._need_to_update_eval_statistics:

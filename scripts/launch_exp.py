@@ -178,7 +178,7 @@ if __name__ == '__main__':
         args.environment,
         args.init_method,
         args.init_episodes,
-        'examples', dump_separate=True)
+        'examples', dump_separate=True, no_sep=True)
 
     ## Visualize test trajectories
     # Format test transitions
@@ -196,12 +196,7 @@ if __name__ == '__main__':
         args.environment,
         args.init_method,
         args.init_episodes,
-        'test', dump_separate=True)
-
-    test_traj_visualizer.dump_plots(args.environment,
-                                    args.init_method,
-                                    args.init_episodes,
-                                    'examples', dump_separate=True)
+        'test', dump_separate=True, no_sep=True)
 
     data_path = os.path.join(
         args.dump_path,

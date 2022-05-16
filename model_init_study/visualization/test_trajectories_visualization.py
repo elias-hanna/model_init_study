@@ -70,7 +70,8 @@ class TestTrajectoriesVisualization(VisualizationMethod):
             controller_list[-1].set_parameters(self.test_params[i])
             ## Init starting state
             S[i,:] = self.test_trajectories[i,0,:]
-        
+
+        has_nan = [False for _ in range(len(self.test_trajectories))]
         for i in range(self.env_max_h):
             for j in range(len(self.test_trajectories)):
                 A[j,:] = controller_list[j](S[j,:])
@@ -85,35 +86,49 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 pred_trajs[j,i,:] = mean_pred.copy()
                 disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
-                if pred_errors[j, i] == np.inf:# or pred_errors[j, i] > 100:
+                if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
+                    has_nan[j] = True
                     pred_errors[j, i] = np.nan
-                    
+                if pred_errors[j, i] > 20:
+                    pred_errors[j, i] = 20
         return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
         pred_errors = np.empty((len(traj1), self.env_max_h))
-        # pred_errors = np.empty((len(traj1), len(self.test_trajectories), self.env_max_h))
-        # pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
-        for i in range(len(traj1)//2):
-            # for j in range(len(self.test_trajectories)):
-            for t in range(self.env_max_h):
-                # import pdb; pdb.set_trace()
-                test = np.linalg.norm(traj1[i*len(self.test_trajectories),t,:]-traj2[0,t,:])
-                # pred_errors[i*len(self.test_trajectories),t] = np.linalg.norm(traj1[i*len(self.test_trajectories),t,:]-self.test_trajectories[0,t,:])
-                pred_errors[i*len(self.test_trajectories),t] = test
-                pred_errors[i*len(self.test_trajectories)+1,t] = np.linalg.norm(traj1[i*len(self.test_trajectories)+1,t,:]-traj2[1,t,:])
-                # pred_errors[i,j, t] = np.linalg.norm(traj1[i,j,:]-traj2[i,j,:])
+        has_nan = [False for _ in range(len(pred_errors))]
 
+        for i in range(len(traj1)//2):
+            for t in range(self.env_max_h):
+                ind = i*len(self.test_trajectories)
+                pred_errors[ind,t] = np.linalg.norm(traj1[ind,t,:]-traj2[0,t,:])
+                pred_errors[ind+1,t] = np.linalg.norm(traj1[ind+1,t,:]-traj2[1,t,:])
+                
+                if has_nan[ind] or np.isinf(pred_errors[ind, t]) or np.isnan(pred_errors[ind, t]):
+                    has_nan[ind] = True
+                    pred_errors[ind, t] = np.nan
+                if has_nan[ind+1] or np.isinf(pred_errors[ind+1, t]) or np.isnan(pred_errors[ind+1, t]):
+                    has_nan[ind+1] = True
+                    pred_errors[ind, t] = np.nan
+                if pred_errors[ind, t] > 20:
+                    pred_errors[ind, t] = 20
+                if pred_errors[ind+1, t] > 20:
+                    pred_errors[ind, t] = 20
         return pred_errors
     
     def dump_plots(self, env_name, init_name, num_episodes, traj_type, dump_separate=False,
-                   show=False, model_trajs=None, plot_stddev=True):
+                   show=False, model_trajs=None, plot_stddev=True, no_sep=False):
         ## Get results of test trajectories on model on last model update
         if model_trajs == None:
             pred_trajs, disagrs, pred_errors = self._execute_test_trajectories_on_model()
         else:
             pred_trajs, disagrs, pred_errors = model_trajs
 
+        if no_sep: ## Typically use this when just foraging data
+            return self.dump_plot(env_name, init_name, num_episodes, traj_type,
+                                  dump_separate=dump_separate, show=show,
+                                  model_trajs=(pred_trajs, disagrs, pred_errors),
+                                  plot_stddev=plot_stddev)
+        
         separated_trajs, labels = self.traj_separator.separate_trajs(pred_trajs)
         test_separated_trajs, labels = self.traj_separator.separate_trajs(self.test_trajectories)
         pred_errors = []
@@ -163,7 +178,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                              mean_disagr+std_disagr,
                              facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean model ensemble disagreeement along test trajectories \n{init_name} on {num_episodes} episodes\n{label}")
+        plt.title(f"Mean model ensemble disagreeement along {traj_type} trajectories \n{init_name} on {num_episodes} episodes\n{label}")
         ## Save fig
         plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_disagr_{traj_type}",
                     bbox_inches='tight')
@@ -182,7 +197,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Figure for model ensemble disagreement
                 plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
                 ## Set plot title
-                plt.title(f"Mean model ensemble disagreeement along single test trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title(f"Mean model ensemble disagreeement along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
                 plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_disagr_{traj_type}",
                             bbox_inches='tight')
@@ -197,8 +212,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         ## Prepare plot
         labels = ['Number of steps on environment', 'Mean prediction error']
         limits = [0, len(mean_pred_error),
-                  # min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
-                  0, 10]
+                  min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
 
         ## Figure for prediction error
@@ -210,7 +224,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                              mean_pred_error+std_pred_error,
                              facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean prediction error along test trajectories\n{init_name} on {num_episodes} episodes\n{label}")
+        plt.title(f"Mean prediction error along {traj_type} trajectories\n{init_name} on {num_episodes} episodes\n{label}")
         ## Save fig
         plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_pred_error_{traj_type}",
                     bbox_inches='tight')
@@ -229,7 +243,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Figure for model ensemble disagreement
                 plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
                 ## Set plot title
-                plt.title(f"Mean prediction error along single test trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title(f"Mean prediction error along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
                 plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_pred_error_{traj_type}",
                             bbox_inches='tight')

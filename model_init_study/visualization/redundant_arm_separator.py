@@ -12,7 +12,7 @@ class RedundantArmSeparator(TrajectorySeparator):
         note: same size for all elements
         [size_1, size_2, ..., size_n]
         """
-        return [25]
+        return [20]
         
     def get_labels(self):
         """

@@ -341,15 +341,33 @@ if __name__ == '__main__':
                                        # mean_disagr-std_disagr,
                                        # mean_disagr+std_disagr,
                                        # facecolor='green', alpha=0.5)
-
+    # 20 better for ant...
     test_limits_disagr = [0, env._max_episode_steps,
-                          0, 10]
+                          0, 20]
     test_limits_pred_error = [0, env._max_episode_steps,
-                              0, 10]
+                              0, 20]
     example_limits_disagr = [0, env._max_episode_steps,
-                             0, 10]
+                             0, 20]
     example_limits_pred_error = [0, env._max_episode_steps,
-                                 0, 10]
+                                 0, 20]
+
+    # test_limits_disagr = [0, env._max_episode_steps,
+    #                       0, 10]
+    # test_limits_pred_error = [0, env._max_episode_steps,
+    #                           0, 10]
+    # example_limits_disagr = [0, env._max_episode_steps,
+    #                          0, 10]
+    # example_limits_pred_error = [0, env._max_episode_steps,
+    #                              0, 10]
+
+    # test_limits_disagr = [0, env._max_episode_steps,
+    #                       0, 1]
+    # test_limits_pred_error = [0, env._max_episode_steps,
+    #                           0, 1]
+    # example_limits_disagr = [0, env._max_episode_steps,
+    #                          0, 1]
+    # example_limits_pred_error = [0, env._max_episode_steps,
+    #                              0, 1]
     ## Plot params
     # Set plot labels
     test_ax_disagr.set_xlabel(test_labels_disagr[0])
@@ -409,7 +427,7 @@ if __name__ == '__main__':
                                bbox_inches='tight')
     example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
                                bbox_inches='tight')
-    plt.show()
+    # plt.show()
     # test_model_trajs = (test_pred_trajs,
     #                     test_disagrs,
     #                     test_pred_errors,)
