@@ -88,59 +88,7 @@ if __name__ == '__main__':
     else:
         obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
-    
-    # controller_params = \
-    # {
-    #     'controller_input_dim': obs_dim,
-    #     'controller_output_dim': act_dim,
-    #     'n_hidden_layers': 2,
-    #     'n_neurons_per_hidden': 10
-    # }
-    # dynamics_model_params = \
-    # {
-    #     'obs_dim': obs_dim,
-    #     'action_dim': act_dim,
-    #     'dynamics_model_type': 'prob', # possible values: prob, det
-    #     'ensemble_size': 4, # only used if dynamics_model_type == prob
-    #     'layer_size': 500,
-    #     'batch_size': 512,
-    #     'learning_rate': 1e-3,
-    #     'train_unique_trans': False,
-    # }
-    # params = \
-    # {
-    #     'obs_dim': obs_dim,
-    #     'action_dim': act_dim,
 
-    #     'separator': separator,
-
-    #     'n_init_episodes': args.init_episodes,
-    #     # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
-    #     'n_test_episodes': 2,
-        
-    #     'controller_type': NeuralNetworkController,
-    #     'controller_params': controller_params,
-
-    #     'dynamics_model_params': dynamics_model_params,
-
-    #     'action_min': -1,
-    #     'action_max': 1,
-
-    #     'state_min': ss_min,
-    #     'state_max': ss_max,
-        
-    #     'policy_param_init_min': -5,
-    #     'policy_param_init_max': 5,
-        
-    #     'dump_path': args.dump_path,
-    #     # 'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
-    #     'path_to_test_trajectories': path_to_examples,
-
-    #     'env': env,
-    #     'env_max_h': env._max_episode_steps,
-    # }
-    # params['model'] = None
-    
     rep_folders = next(os.walk(f'.'))[1]
 
     rep_folders = [x for x in rep_folders if (x.isdigit())]
@@ -301,23 +249,6 @@ if __name__ == '__main__':
     example_limits_pred_error = [0, env._max_episode_steps,
                                  0, args.pred_err_plot_upper_lim]
 
-    # test_limits_disagr = [0, env._max_episode_steps,
-    #                       0, 10]
-    # test_limits_pred_error = [0, env._max_episode_steps,
-    #                           0, 10]
-    # example_limits_disagr = [0, env._max_episode_steps,
-    #                          0, 10]
-    # example_limits_pred_error = [0, env._max_episode_steps,
-    #                              0, 10]
-
-    # test_limits_disagr = [0, env._max_episode_steps,
-    #                       0, 1]
-    # test_limits_pred_error = [0, env._max_episode_steps,
-    #                           0, 1]
-    # example_limits_disagr = [0, env._max_episode_steps,
-    #                          0, 1]
-    # example_limits_pred_error = [0, env._max_episode_steps,
-    #                              0, 1]
     ## Plot params
     # Set plot labels
     test_ax_disagr.set_xlabel(test_labels_disagr[0])
