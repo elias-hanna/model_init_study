@@ -37,10 +37,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Process run parameters.')
 
-    parser.add_argument('--init-method', type=str, default='random-policies')
+    parser.add_argument('--init-methods', nargs="*",
+                        type=str, default=['random-policies', 'random-actions'])
 
-    parser.add_argument('--init-episodes', type=int, default='10')
+    parser.add_argument('--init-episodes', nargs="*",
+                        type=int, default=[5, 10, 15, 20])
 
+    parser.add_argument('--disagr-plot-upper-lim', type=float, default=5.)
+    parser.add_argument('--pred-err-plot-upper-lim', type=float, default=5.)
+    
     parser.add_argument('--dump-path', type=str, default='default_dump/')
 
     parser.add_argument('--environment', '-e', type=str, default='ball_in_cup')
@@ -84,63 +89,63 @@ if __name__ == '__main__':
         obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     
-    controller_params = \
-    {
-        'controller_input_dim': obs_dim,
-        'controller_output_dim': act_dim,
-        'n_hidden_layers': 2,
-        'n_neurons_per_hidden': 10
-    }
-    dynamics_model_params = \
-    {
-        'obs_dim': obs_dim,
-        'action_dim': act_dim,
-        'dynamics_model_type': 'prob', # possible values: prob, det
-        'ensemble_size': 4, # only used if dynamics_model_type == prob
-        'layer_size': 500,
-        'batch_size': 512,
-        'learning_rate': 1e-3,
-        'train_unique_trans': False,
-    }
-    params = \
-    {
-        'obs_dim': obs_dim,
-        'action_dim': act_dim,
+    # controller_params = \
+    # {
+    #     'controller_input_dim': obs_dim,
+    #     'controller_output_dim': act_dim,
+    #     'n_hidden_layers': 2,
+    #     'n_neurons_per_hidden': 10
+    # }
+    # dynamics_model_params = \
+    # {
+    #     'obs_dim': obs_dim,
+    #     'action_dim': act_dim,
+    #     'dynamics_model_type': 'prob', # possible values: prob, det
+    #     'ensemble_size': 4, # only used if dynamics_model_type == prob
+    #     'layer_size': 500,
+    #     'batch_size': 512,
+    #     'learning_rate': 1e-3,
+    #     'train_unique_trans': False,
+    # }
+    # params = \
+    # {
+    #     'obs_dim': obs_dim,
+    #     'action_dim': act_dim,
 
-        'separator': separator,
+    #     'separator': separator,
 
-        'n_init_episodes': args.init_episodes,
-        # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
-        'n_test_episodes': 2,
+    #     'n_init_episodes': args.init_episodes,
+    #     # 'n_test_episodes': int(.2*args.init_episodes), # 20% of n_init_episodes
+    #     'n_test_episodes': 2,
         
-        'controller_type': NeuralNetworkController,
-        'controller_params': controller_params,
+    #     'controller_type': NeuralNetworkController,
+    #     'controller_params': controller_params,
 
-        'dynamics_model_params': dynamics_model_params,
+    #     'dynamics_model_params': dynamics_model_params,
 
-        'action_min': -1,
-        'action_max': 1,
+    #     'action_min': -1,
+    #     'action_max': 1,
 
-        'state_min': ss_min,
-        'state_max': ss_max,
+    #     'state_min': ss_min,
+    #     'state_max': ss_max,
         
-        'policy_param_init_min': -5,
-        'policy_param_init_max': 5,
+    #     'policy_param_init_min': -5,
+    #     'policy_param_init_max': 5,
         
-        'dump_path': args.dump_path,
-        # 'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
-        'path_to_test_trajectories': path_to_examples,
+    #     'dump_path': args.dump_path,
+    #     # 'path_to_test_trajectories': 'examples/'+args.environment+'_example_trajectories.npz',
+    #     'path_to_test_trajectories': path_to_examples,
 
-        'env': env,
-        'env_max_h': env._max_episode_steps,
-    }
-    params['model'] = None
+    #     'env': env,
+    #     'env_max_h': env._max_episode_steps,
+    # }
+    # params['model'] = None
     
     rep_folders = next(os.walk(f'.'))[1]
 
     rep_folders = [x for x in rep_folders if (x.isdigit())]
-    
-    rep_data = np.load(f'{rep_folders[0]}/{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
+
+    rep_data = np.load(f'{rep_folders[0]}/{args.environment}_{args.init_methods[0]}_{args.init_episodes[0]}_data.npz')
 
     tmp_data = rep_data['test_pred_trajs']
 
@@ -148,63 +153,11 @@ if __name__ == '__main__':
     trajs_per_rep = len(tmp_data)
     n_total_trajs = trajs_per_rep*len(rep_folders)
     task_h = len(tmp_data[0])
-    obs_dim = len(tmp_data[0][0])
-    
-    test_pred_trajs = np.empty((n_total_trajs, task_h, obs_dim))
-    test_disagrs = np.empty((n_total_trajs, task_h))
-    test_pred_errors = np.empty((n_total_trajs, task_h))
 
-    examples_pred_trajs = np.empty((n_total_trajs, task_h, obs_dim))
-    examples_disagrs = np.empty((n_total_trajs, task_h))
-    examples_pred_errors = np.empty((n_total_trajs, task_h))
-
-
-    rep_cpt = 0
-    
-    for rep_path in rep_folders:
-        rep_data = np.load(f'{rep_path}/{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
-
-        test_pred_trajs[rep_cpt*trajs_per_rep:
-                        rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_pred_trajs']
-        test_disagrs[rep_cpt*trajs_per_rep:
-                     rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_disagrs']
-        test_pred_errors[rep_cpt*trajs_per_rep:
-                         rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['test_pred_errors']
-
-        examples_pred_trajs[rep_cpt*trajs_per_rep:
-                        rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_pred_trajs']
-        examples_disagrs[rep_cpt*trajs_per_rep:
-                     rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_disagrs']
-        examples_pred_errors[rep_cpt*trajs_per_rep:
-                         rep_cpt*trajs_per_rep + trajs_per_rep] = rep_data['examples_pred_errors']
-
-        rep_cpt += 1
-        
-    test_model_trajs = (test_pred_trajs,
-                        test_disagrs,
-                        test_pred_errors,)
-    
-    examples_model_trajs = (examples_pred_trajs,
-                            examples_disagrs,
-                            examples_pred_errors,)
-
-    test_traj_visualizer = TestTrajectoriesVisualization(params)
-
-    test_traj_visualizer.dump_plots(args.environment,
-                                    args.init_method,
-                                    args.init_episodes,
-                                    'all_test', model_trajs=test_model_trajs)
-
-    test_traj_visualizer.dump_plots(args.environment,
-                                    args.init_method,
-                                    args.init_episodes,
-                                    'all_examples', model_trajs=examples_model_trajs)
-
-####################################################################################wip
     n_init_method = 2
-    init_methods = ['random-policies', 'random-actions']
+    init_methods = args.init_methods #['random-policies', 'random-actions']
     n_init_episodes = 4
-    init_episodes = [5, 10, 15, 20]
+    init_episodes = args.init_episodes #[5, 10, 15, 20]
     
     test_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
     test_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
@@ -339,15 +292,14 @@ if __name__ == '__main__':
                                        # mean_disagr-std_disagr,
                                        # mean_disagr+std_disagr,
                                        # facecolor='green', alpha=0.5)
-    # 20 better for ant...
     test_limits_disagr = [0, env._max_episode_steps,
-                          0, 20]
+                          0, args.disagr_plot_upper_lim]
     test_limits_pred_error = [0, env._max_episode_steps,
-                              0, 20]
+                              0, args.pred_err_plot_upper_lim]
     example_limits_disagr = [0, env._max_episode_steps,
-                             0, 20]
+                             0, args.disagr_plot_upper_lim]
     example_limits_pred_error = [0, env._max_episode_steps,
-                                 0, 20]
+                                 0, args.pred_err_plot_upper_lim]
 
     # test_limits_disagr = [0, env._max_episode_steps,
     #                       0, 10]
@@ -426,25 +378,3 @@ if __name__ == '__main__':
     example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
                                bbox_inches='tight')
     # plt.show()
-    # test_model_trajs = (test_pred_trajs,
-    #                     test_disagrs,
-    #                     test_pred_errors,)
-    
-    # examples_model_trajs = (examples_pred_trajs,
-    #                         examples_disagrs,
-    #                         examples_pred_errors,)
-
-    # test_traj_visualizer = TestTrajectoriesVisualization(params)
-
-    # test_traj_visualizer.dump_plots(args.environment,
-    #                                 args.init_method,
-    #                                 args.init_episodes,
-    #                                 'all_test', model_trajs=test_model_trajs)
-
-    # test_traj_visualizer.dump_plots(args.environment,
-    #                                 args.init_method,
-    #                                 args.init_episodes,
-    #                                 'all_examples', model_trajs=examples_model_trajs)
-
-
-    

@@ -82,8 +82,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Compute mean prediction from model samples
                 next_step_pred = batch_pred_delta_ns[j]
                 mean_pred = [np.mean(next_step_pred[:,k]) for k in range(len(next_step_pred[0]))]
+                pred_trajs[j,i,:] = S[j,:]
                 S[j,:] += mean_pred.copy()
-                pred_trajs[j,i,:] = mean_pred.copy()
+                # pred_trajs[j,i,:] = mean_pred.copy()
                 disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
                 if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
@@ -102,7 +103,6 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ind = i*len(self.test_trajectories)
                 pred_errors[ind,t] = np.linalg.norm(traj1[ind,t,:]-traj2[0,t,:])
                 pred_errors[ind+1,t] = np.linalg.norm(traj1[ind+1,t,:]-traj2[1,t,:])
-                
                 if has_nan[ind] or np.isinf(pred_errors[ind, t]) or np.isnan(pred_errors[ind, t]):
                     has_nan[ind] = True
                     pred_errors[ind, t] = np.nan
