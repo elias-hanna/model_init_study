@@ -11,8 +11,10 @@ if __name__ == '__main__':
     from model_init_study.initializers.random_actions_initializer \
         import RandomActionsInitializer
 
-    from model_init_study.visualization.discretized_state_space_visualization \
-        import DiscretizedStateSpaceVisualization
+    # from model_init_study.visualization.discretized_state_space_visualization \
+        # import DiscretizedStateSpaceVisualization
+    from model_init_study.visualization.state_space_repartition_visualization \
+        import StateSpaceRepartitionVisualization
     from model_init_study.visualization.test_trajectories_visualization \
         import TestTrajectoriesVisualization
 
@@ -159,6 +161,26 @@ if __name__ == '__main__':
     train_transitions = transitions[:-params['n_test_episodes']]
     test_transitions = transitions[-params['n_test_episodes']:]
 
+    ## Format train actions and trajectories
+    # Actions
+    train_actions = np.empty((params['n_init_episodes'],
+                              params['env_max_h'],
+                              act_dim))
+    train_actions[:] = np.nan
+
+    for i in range(params['n_init_episodes']):
+        for j in range(params['env_max_h']):
+            train_actions[i, j, :] = train_transitions[i][j][0]
+    # Trajectories
+    train_trajectories = np.empty((params['n_init_episodes'],
+                                   params['env_max_h'],
+                                   obs_dim))
+    train_trajectories[:] = np.nan
+
+    for i in range(params['n_init_episodes']):
+        for j in range(params['env_max_h']):
+            train_trajectories[i, j, :] = train_transitions[i][j][1]
+
     ## Train the model
     dynamics_model = DynamicsModel(params)
     # Add data to replay buffer
@@ -171,7 +193,11 @@ if __name__ == '__main__':
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
 
-    # Visualize example trajectories
+    ## Visualize state space repartition
+    ssr_visualizer = StateSpaceRepartitionVisualization(params)
+    ssr_visualizer.set_trajectories(train_trajectories)
+    ssr_visualizer.dump_plots(args.environment, args.init_method, args.init_episodes, 'train')
+    ## Visualize example trajectories
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
 
     examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
@@ -180,8 +206,8 @@ if __name__ == '__main__':
         args.init_episodes,
         'examples', dump_separate=True, no_sep=True)
 
-    ## Visualize test trajectories
-    # Format test transitions
+    ## Format test trajectories
+    # Trajectories
     test_trajectories = np.empty((params['n_test_episodes'],
                                   params['env_max_h'],
                                   obs_dim))
@@ -190,7 +216,17 @@ if __name__ == '__main__':
     for i in range(params['n_test_episodes']):
         for j in range(params['env_max_h']):
             test_trajectories[i, j, :] = test_transitions[i][j][1]
+    # Actions
+    test_actions = np.empty((params['n_test_episodes'],
+                                  params['env_max_h'],
+                                  act_dim))
+    test_actions[:] = np.nan
 
+    for i in range(params['n_test_episodes']):
+        for j in range(params['env_max_h']):
+            test_actions[i, j, :] = test_transitions[i][j][0]
+
+    ## Visualize test trajectories
     test_traj_visualizer.set_test_trajectories(test_trajectories)
     test_pred_trajs, test_disagrs, test_pred_errors = test_traj_visualizer.dump_plots(
         args.environment,
@@ -208,5 +244,9 @@ if __name__ == '__main__':
              test_pred_errors=test_pred_errors,
              examples_pred_trajs=examples_pred_trajs,
              examples_disagrs=examples_disagrs,
-             examples_pred_errors=examples_pred_errors,)
+             examples_pred_errors=examples_pred_errors,
+             train_trajs=train_trajectories,
+             train_actions=train_actions,
+             test_trajs=test_trajectories,
+             test_actions=test_actions,)
     exit(0)
