@@ -126,7 +126,7 @@ if __name__ == '__main__':
     test_ax_pred_error = test_fig_pred_error.add_subplot(111)
 
     test_fig_pred_disagr = plt.figure()
-    test_ax_pred_disagr = example_fig_pred_error.add_subplot(111)
+    test_ax_pred_disagr = test_fig_pred_disagr.add_subplot(111)
 
     example_fig_disagr = plt.figure()
     example_ax_disagr = example_fig_disagr.add_subplot(111)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     example_ax_pred_error = example_fig_pred_error.add_subplot(111)
 
     example_fig_pred_disagr = plt.figure()
-    example_ax_pred_disagr = example_fig_pred_error.add_subplot(111)
+    example_ax_pred_disagr = example_fig_pred_disagr.add_subplot(111)
     # Init limits for each fig
     test_limits_disagr = [0, env._max_episode_steps,
                           0, 0]
