@@ -222,7 +222,9 @@ if __name__ == '__main__':
                                 color=colors(i*n_init_episodes + j),
                                     label=f'{init_method}_{init_episode}')
 
-            test_ax_pred_disagr.plot(test_mean_disagr, test_mean_pred_error, '-',
+            sorted_idxs = test_mean_disagr.argsort()
+            test_ax_pred_disagr.plot(test_mean_disagr[sorted_idxs],
+                                     test_mean_pred_error[sorted_idxs], '-',
                                      color=colors(i*n_init_episodes + j),
                                      label=f'{init_method}_{init_episode}')
             ## On example trajs
@@ -252,7 +254,9 @@ if __name__ == '__main__':
                                 color=colors(i*n_init_episodes + j),
                                        label=f'{init_method}_{init_episode}')
 
-            example_ax_pred_disagr.plot(example_mean_disagr, example_mean_pred_error, '-',
+            sorted_idxs = example_mean_disagr.argsort()
+            example_ax_pred_disagr.plot(example_mean_disagr[sorted_idxs],
+                                        example_mean_pred_error[sorted_idxs], '-',
                                         color=colors(i*n_init_episodes + j),
                                         label=f'{init_method}_{init_episode}')
             # if plot_stddev:
