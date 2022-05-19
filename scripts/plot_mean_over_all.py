@@ -125,33 +125,43 @@ if __name__ == '__main__':
     test_fig_pred_error = plt.figure()
     test_ax_pred_error = test_fig_pred_error.add_subplot(111)
 
+    test_fig_pred_disagr = plt.figure()
+    test_ax_pred_disagr = example_fig_pred_error.add_subplot(111)
+
     example_fig_disagr = plt.figure()
     example_ax_disagr = example_fig_disagr.add_subplot(111)
 
     example_fig_pred_error = plt.figure()
     example_ax_pred_error = example_fig_pred_error.add_subplot(111)
 
+    example_fig_pred_disagr = plt.figure()
+    example_ax_pred_disagr = example_fig_pred_error.add_subplot(111)
     # Init limits for each fig
     test_limits_disagr = [0, env._max_episode_steps,
-                     0, 0]
+                          0, 0]
     test_limits_pred_error = [0, env._max_episode_steps,
-                         0, 0]
+                              0, 0]
+    test_limits_pred_disagr = [0, env._max_episode_steps,
+                               0, 0]
     example_limits_disagr = [0, env._max_episode_steps,
-                     0, 0]
+                             0, 0]
     example_limits_pred_error = [0, env._max_episode_steps,
-                         0, 0]
+                                 0, 0]
+    example_limits_pred_disagr = [0, env._max_episode_steps,
+                                  0, 0]
 
     # Init labels for each fig
     test_labels_disagr = ['Number of steps on environment', 'Mean ensemble disagreement']
     test_labels_pred_error = ['Number of steps on environment', 'Mean prediction error']
+    test_labels_pred_disagr = ['Mean ensemble disagreement', 'Mean prediction error']
     example_labels_disagr = ['Number of steps on environment', 'Mean ensemble disagreement']
     example_labels_pred_error = ['Number of steps on environment', 'Mean prediction error']
-
+    example_labels_pred_disagr = ['Mean ensemble disagreement', 'Mean prediction error']
     
     evenly_spaced_interval = np.linspace(0, 1, n_init_method*n_init_episodes)
     colors = [cm.rainbow(x) for x in evenly_spaced_interval]
 
-    colors = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes)
+    colors = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes+1)
     
     for i in range(n_init_method):
         init_method =  init_methods[i]
@@ -200,7 +210,8 @@ if __name__ == '__main__':
                 test_limits_disagr[3] = max(test_mean_disagr)
             ## Figure for model ensemble disagreement
             test_ax_disagr.plot(range(env._max_episode_steps), test_mean_disagr, '-',
-                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
+                                color=colors(i*n_init_episodes + j),
+                                label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(test_mean_pred_error) < test_limits_pred_error[2]:
                 test_limits_pred_error[2] = min(test_mean_pred_error)
@@ -208,8 +219,12 @@ if __name__ == '__main__':
                 test_limits_pred_error[3] = max(test_mean_pred_error)
             ## Figure for pred_error
             test_ax_pred_error.plot(range(env._max_episode_steps), test_mean_pred_error, '-',
-                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
+                                color=colors(i*n_init_episodes + j),
+                                    label=f'{init_method}_{init_episode}')
 
+            test_ax_pred_disagr.plot(test_mean_disagr, test_mean_pred_error, '-',
+                                     color=colors(i*n_init_episodes + j),
+                                     label=f'{init_method}_{init_episode}')
             ## On example trajs
             ## Compute mean and stddev of trajs disagreement
             example_mean_disagr = np.nanmean(example_disagrs[i,j], axis=0)
@@ -225,7 +240,8 @@ if __name__ == '__main__':
                 example_limits_disagr[3] = max(example_mean_disagr)
             ## Figure for model ensemble disagreement
             example_ax_disagr.plot(range(env._max_episode_steps), example_mean_disagr, '-',
-                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
+                                color=colors(i*n_init_episodes + j),
+                                   label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
                 example_limits_pred_error[2] = min(example_mean_pred_error)
@@ -233,8 +249,12 @@ if __name__ == '__main__':
                 example_limits_pred_error[3] = max(example_mean_pred_error)
             ## Figure for pred_error
             example_ax_pred_error.plot(range(env._max_episode_steps), example_mean_pred_error,'-',
-                                color=colors(i*n_init_episodes + j), label=f'{init_method}_{init_episode}')
+                                color=colors(i*n_init_episodes + j),
+                                       label=f'{init_method}_{init_episode}')
 
+            example_ax_pred_disagr.plot(example_mean_disagr, example_mean_pred_error, '-',
+                                        color=colors(i*n_init_episodes + j),
+                                        label=f'{init_method}_{init_episode}')
             # if plot_stddev:
                 # ax_disagr.fill_between(range(len(mean_disagr)),
                                        # mean_disagr-std_disagr,
@@ -255,11 +275,16 @@ if __name__ == '__main__':
     test_ax_disagr.set_ylabel(test_labels_disagr[1])
     test_ax_pred_error.set_xlabel(test_labels_pred_error[0])
     test_ax_pred_error.set_ylabel(test_labels_pred_error[1])
+    test_ax_pred_disagr.set_xlabel(test_limits_pred_disagr[0])
+    test_ax_pred_disagr.set_xlabel(test_limits_pred_disagr[1])
 
     example_ax_disagr.set_xlabel(example_labels_disagr[0])
     example_ax_disagr.set_ylabel(example_labels_disagr[1])
     example_ax_pred_error.set_xlabel(example_labels_pred_error[0])
     example_ax_pred_error.set_ylabel(example_labels_pred_error[1])
+    example_ax_pred_disagr.set_xlabel(example_limits_pred_disagr[0])
+    example_ax_pred_disagr.set_xlabel(example_limits_pred_disagr[1])
+
 
     ## Set plot limits
     x_min = test_limits_disagr[0]; x_max = test_limits_disagr[1];
@@ -274,6 +299,12 @@ if __name__ == '__main__':
     test_ax_pred_error.set_xlim(x_min,x_max)
     test_ax_pred_error.set_ylim(y_min,y_max)
 
+    x_min = test_limits_disagr[2]; x_max = test_limits_disagr[3];
+    y_min = test_limits_pred_error[2]; y_max = test_limits_pred_error[3]
+    
+    test_ax_pred_disagr.set_xlim(x_min,x_max)
+    test_ax_pred_disagr.set_ylim(y_min,y_max)
+
     x_min = example_limits_disagr[0]; x_max = example_limits_disagr[1];
     y_min = example_limits_disagr[2]; y_max = example_limits_disagr[3]
     
@@ -286,26 +317,42 @@ if __name__ == '__main__':
     example_ax_pred_error.set_xlim(x_min,x_max)
     example_ax_pred_error.set_ylim(y_min,y_max)
 
+    x_min = example_limits_disagr[2]; x_max = example_limits_disagr[3];
+    y_min = example_limits_pred_error[2]; y_max = example_limits_pred_error[3]
+    
+    example_ax_pred_disagr.set_xlim(x_min,x_max)
+    example_ax_pred_disagr.set_ylim(y_min,y_max)
+
     ## Set legend
 
     test_ax_disagr.legend()
     test_ax_pred_error.legend()
+    test_ax_pred_disagr.legend()
 
     example_ax_disagr.legend()
     example_ax_pred_error.legend()
+    example_ax_pred_disagr.legend()
 
     ## Set plot title
     test_ax_disagr.set_title(f"Mean model ensemble disagreeement along test trajectories")
     test_ax_pred_error.set_title(f"Mean prediction error along test trajectories")
+    test_ax_pred_disagr.set_title(f"Mean prediction error vs model ensemble disagreement on test trajectories")
+
     example_ax_disagr.set_title(f"Mean model ensemble disagreeement along example trajectories")
     example_ax_pred_error.set_title(f"Mean prediction error along example trajectories")
+    example_ax_pred_disagr.set_title(f"Mean prediction error vs model ensemble disagreement on example trajectories")
     ## Save fig
     test_fig_disagr.savefig(f"{args.dump_path}/{args.environment}_test_trajectories_disagr",
                             bbox_inches='tight')
     test_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_test_trajectories_pred_error",
                             bbox_inches='tight')
+    test_fig_pred_disagr.savefig(f"{args.dump_path}/{args.environment}_test_trajectories_pred_disagr",
+                            bbox_inches='tight')
+
     example_fig_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_disagr",
                                bbox_inches='tight')
     example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
+                               bbox_inches='tight')
+    example_fig_pred_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_disagr",
                                bbox_inches='tight')
     # plt.show()

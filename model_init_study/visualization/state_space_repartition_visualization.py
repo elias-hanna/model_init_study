@@ -11,17 +11,18 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
         super().__init__(params=params)
         self._process_params(params)
         self._trajs = None
-
+        self._concurrent_trajs = None
+        
     def _process_params(self, params):
         super()._process_params(params)
-        if 'state_min' in params:
-            self._state_min = params['state_min']
-        else:
-            raise Exception('StateSpaceRepartitionVisualization _process_params error: state_min not in params')
-        if 'state_max' in params:
-            self._state_max = params['state_max']
-        else:
-            raise Exception('StateSpaceRepartitionVisualization _process_params error: state_max not in params')
+        # if 'state_min' in params:
+        #     self._state_min = params['state_min']
+        # else:
+        #     raise Exception('StateSpaceRepartitionVisualization _process_params error: state_min not in params')
+        # if 'state_max' in params:
+        #     self._state_max = params['state_max']
+        # else:
+        #     raise Exception('StateSpaceRepartitionVisualization _process_params error: state_max not in params')
         if 'obs_dim' in params:
             self._obs_dim = params['obs_dim']
         else:
@@ -29,61 +30,118 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
 
     def set_trajectories(self, trajs):
         self._trajs = trajs
+
+    def set_concurrent_trajectories(self, trajs):
+        self._concurrent_trajs = trajs
         
     def dump_plots(self, env_name, init_name, num_episodes, traj_type, itr=0, show=False,
-                   spe_fig_path=None, label=''):
+                   spe_fig_path=None, label='', use_concurrent_trajs=False, legends=['', '']):
         if self._trajs is None:
-            raise Exception('StateSpaceRepartitionVisualization dump_plots error: trajs not set')
+            raise Exception('StateSpaceRepartitionVisualization dump_plots error: _trajs not set')
+        if use_concurrent_trajs:
+            if self._concurrent_trajs is None:
+                raise Exception('StateSpaceRepartitionVisualization dump_plots error: _concurrent_trajs not set')
         ## Make dump dirs
-        run_name = f'{env_name}_{init_name}_{num_episodes}'
-        fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
+        run_name = f'{env_name}_{num_episodes}'
+        fig_path = os.path.join(self.dump_path, f'{run_name}')
         os.makedirs(fig_path, exist_ok=True)
 
-        ## Flatten trajs
-        trajectories = np.empty((self._trajs.shape[0]*self._trajs.shape[1],
-                                 self._trajs.shape[2]))
-        for i in range(self._trajs.shape[0]): ## Over number of trajs
-            for j in range(self._trajs.shape[1]): ## Over steps in traj
-                trajectories[i*self._trajs.shape[1]+j,:] = self._trajs[i,j,:]
+        if len(self._trajs.shape) > 2:
+            ## Flatten trajs
+            trajectories = np.empty((self._trajs.shape[0]*self._trajs.shape[1],
+                                     self._trajs.shape[2]))
+            for i in range(self._trajs.shape[0]): ## Over number of trajs
+                for j in range(self._trajs.shape[1]): ## Over steps in traj
+                    trajectories[i*self._trajs.shape[1]+j,:] = self._trajs[i,j,:]
+            if use_concurrent_trajs:
+                concurrent_trajectories = np.empty((self._concurrent_trajs.shape[0]*
+                                                    self._concurrent_trajs.shape[1],
+                                                    self._concurrent_trajs.shape[2]))
+                for i in range(self._concurrent_trajs.shape[0]): ## Over number of trajs
+                    for j in range(self._concurrent_trajs.shape[1]): ## Over steps in traj
+                        concurrent_trajectories[i*self._concurrent_trajs.shape[1]+j,:] = self._concurrent_trajs[i,j,:]
+        else:
+            trajectories = self._trajs
+            if use_concurrent_trajs:
+                concurrent_trajectories = self._concurrent_trajs
         ## Normalize states
-        # Get mins and maxs of obs for each dim
-        min_obs = np.min(trajectories, axis=0)
-        max_obs = np.max(trajectories, axis=0)
-        import pdb; pdb.set_trace()
-
-        ## Careful need to do it dim by dim
-        norm_trajs = (trajectories - min_obs)/ \
-                     (max_obs - min_obs)
+        if use_concurrent_trajs:
+            stacked_trajs = np.vstack((trajectories, concurrent_trajectories))
+            # Get mins and maxs of obs for each dim
+            min_obs = np.min(stacked_trajs, axis=0)
+            max_obs = np.max(stacked_trajs, axis=0)
+            
+            ## Careful need to do it dim by dim
+            norm_trajs = (trajectories - min_obs)/ \
+                         (max_obs - min_obs)
+            ## Careful need to do it dim by dim
+            norm_concurrent_trajs = (concurrent_trajectories - min_obs)/ \
+                                    (max_obs - min_obs)
+        
+        else:
+            # Get mins and maxs of obs for each dim
+            min_obs = np.min(trajectories, axis=0)
+            max_obs = np.max(trajectories, axis=0)
+            
+            ## Careful need to do it dim by dim
+            norm_trajs = (trajectories - min_obs)/ \
+                         (max_obs - min_obs)
         
         ## Create fig and ax
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-
-        ## Plot histogram
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # fig, ax = plt.subplots(self._obs_dim)#, 1, figsize=(20, 70), facecolor='white', edgecolor='white')
         bins = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
 
-        n, bins, patches = plt.hist(norm_centroids_disagrs, bins=bins, rwidth=.5)
+        for dim in range(self._trajs.shape[1]):
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ## Plot histogram
+            n, h_bins, patches = ax.hist(norm_trajs[:, dim], bins=bins, rwidth=.5)
+            if use_concurrent_trajs:
+                c_n, c_h_bins, c_patches = ax.hist(norm_concurrent_trajs[:, dim],
+                                                   bins=bins, rwidth=.5)
 
-        plt.title(f"Repartition of {traj_type} observations in whole observation space\nmin obs={min_obs} and max obs={max_obs}")
-        plt.xlabel("Min-max normalized value of observation for data samples")
-        plt.ylabel("Number of data samples for each bin")
+                ## Get highest patch
+                max_height = max(n) if max(n) > max(c_n) else max(c_n)
+                ax.set_ylim([-max_height, max_height])
+                ## Modify rects to make them reverse
+                # rects = ax[dim].patches
+                # rects = ax.c_patches
 
-        ## Modify labels to display value range
-        rects = ax.patches
-        labels = [str(bins[i])+"-"+str(bins[i+1]) for i in range(len(bins)-1)]
-        
-        for rect, label in zip(rects, labels):
-            height = rect.get_height()
-            ax.text(rect.get_x() + rect.get_width() / 2, height+0.01, label,
-                    ha='center', va='bottom')
-        if not spe_fig_path:
-            ## Save fig
-            plt.savefig(f"{fig_path}/results_{itr}/state_space_repartition_",
-                        bbox_inches='tight')
-        else:
-            plt.savefig(f"{spe_fig_path}/", bbox_inches='tight')
-        if show:
-            plt.show()
+                # for rect, label in zip(rects, labels):
+                for rect in c_patches:
+                    height = rect.get_height()
+                    rect.set_height(-height)
+                
+            ## Modify labels to display value range
+            # rects = ax[dim].patches
+            # rects = ax.patches
+            labels = [str(bins[i])+"-"+str(bins[i+1]) for i in range(len(bins)-1)]
+
+            # for rect, label in zip(rects, labels):
+            for rect, loc_label in zip(patches, labels):
+                height = rect.get_height()
+                rect.set_height(height)
+                ax.text(rect.get_x() + rect.get_width() / 2, height+0.01, loc_label,
+                # ax[dim].text(rect.get_x() + rect.get_width() / 2, height+0.01, label,
+                        ha='center', va='bottom')
+
+            plt.title(f"Repartition of {traj_type} observations in whole observation space for dimension {dim}\nmin obs={min_obs[dim]} and max obs={max_obs[dim]}")
+            plt.legend(legends)
+            plt.xlabel("Min-max normalized value of observation for data samples")
+            plt.ylabel("Number of data samples for each bin")
+            
+            if show:
+                plt.show()
+            
+            if spe_fig_path is None:
+                ## Save fig
+                plt.savefig(f"{fig_path}/state_space_repartition_dim_{dim}_{label}",
+                            bbox_inches='tight')
+            else:
+                plt.savefig(f"{spe_fig_path}_dim_{dim}_{label}", bbox_inches='tight')
+
         plt.close()
 
 

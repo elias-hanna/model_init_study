@@ -193,10 +193,11 @@ if __name__ == '__main__':
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
 
-    ## Visualize state space repartition
-    ssr_visualizer = StateSpaceRepartitionVisualization(params)
-    ssr_visualizer.set_trajectories(train_trajectories)
-    ssr_visualizer.dump_plots(args.environment, args.init_method, args.init_episodes, 'train')
+    ## Visualize state space repartition (no need we plot it afterwards)
+    # ssr_visualizer = StateSpaceRepartitionVisualization(params)
+    # ssr_visualizer.set_trajectories(train_trajectories)
+    # ssr_visualizer.dump_plots(args.environment, args.init_method, args.init_episodes, 'train')
+
     ## Visualize example trajectories
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
 
