@@ -90,7 +90,15 @@ if __name__ == '__main__':
     params = {'obs_dim': obs_dim}
 
     ssr_vis = StateSpaceRepartitionVisualization(params)
-    
+
+    ## Plot table with delta S mean and stddev (prediction target) + delta A mean and stddev    
+    column_headers = [init_method for init_method in init_methods]
+    row_headers = [init_episode for init_episode in init_episodes]
+    cell_text = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
+    rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
+    ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
+
+    cpt_tab = 0
     for init_episode in init_episodes:
         actions = [[], []]
         observations = [[], []]
@@ -111,36 +119,48 @@ if __name__ == '__main__':
         ## Format data of actions and observations
         n_actions = 0
         n_obs = 0
+        n_trans = 0
         for i in range(len(actions[0])):
             for j in range(len(actions[0][i])):
                 n_actions += len(actions[0][i][j])
                 n_obs += len(observations[0][i][j])
+                n_trans += len(observations[0][i][j]) - 1
 
         n_c_actions = 0
         n_c_obs = 0
+        n_c_trans = 0
         for i in range(len(actions[1])):
             for j in range(len(actions[1][i])):
                 n_c_actions += len(actions[1][i][j])
                 n_c_obs += len(observations[1][i][j])
-
+                n_c_trans += len(observations[1][i][j]) - 1
+                
         ## Fill numpy arrays
         form_actions = np.empty((n_actions, act_dim)) 
         form_obs = np.empty((n_obs, obs_dim))
+        form_ds = np.empty((n_trans, obs_dim))
         curr_ptr = 0
+        curr_ds_ptr = 0
         for i in range(len(actions[0])):
             for j in range(len(actions[0][i])):
                 form_actions[curr_ptr:curr_ptr+len(actions[0][i][j])] = actions[0][i][j]
                 form_obs[curr_ptr:curr_ptr+len(observations[0][i][j])] = observations[0][i][j]
                 curr_ptr += len(actions[0][i][j])
+                form_ds[curr_ds_ptr:curr_ds_ptr+len(observations[0][i][j])-1] = observations[0][i][j][1:] - observations[0][i][j][:-1]
+                curr_ds_ptr += len(observations[0][i][j])-1
 
         form_c_actions = np.empty((n_c_actions, act_dim)) 
         form_c_obs = np.empty((n_c_obs, obs_dim))
+        form_c_ds = np.empty((n_c_trans, obs_dim))
         curr_ptr = 0
+        curr_ds_ptr = 0
         for i in range(len(actions[1])):
             for j in range(len(actions[1][i])):
                 form_c_actions[curr_ptr:curr_ptr+len(actions[1][i][j])] = actions[1][i][j]
                 form_c_obs[curr_ptr:curr_ptr+len(observations[1][i][j])] = observations[1][i][j]
                 curr_ptr += len(actions[1][i][j])
+                form_c_ds[curr_ds_ptr:curr_ds_ptr+len(observations[1][i][j])-1] = observations[1][i][j][1:] - observations[1][i][j][:-1]
+                curr_ds_ptr += len(observations[0][i][j])-1
                 
         ssr_vis.set_trajectories(form_actions)
         ssr_vis.set_concurrent_trajectories(form_c_actions)
@@ -155,3 +175,53 @@ if __name__ == '__main__':
         fig_path = os.path.join(path, f'{args.environment}_repartition_obs_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train',
                            spe_fig_path=fig_path, use_concurrent_trajs=True, legends=args.init_methods)
+
+        ## For init_method[0]
+        # mean_actions = round(np.mean(np.nanmean(form_actions, axis=0)), 2)
+        # stddev_actions = round(np.mean(np.nanstd(form_actions, axis=0)), 2)
+        # stddev_actions = np.std(mean_actions)
+        # mean_obs = round(np.mean(np.nanmean(form_obs, axis=0)), 2)
+        # stddev_obs = round(np.mean(np.nanstd(form_obs, axis=0)), 2)
+        # stddev_obs = np.std(mean_obs)
+        mean_ds = np.mean(np.mean(form_ds, axis=0))
+        std_ds = np.mean(np.std(form_ds, axis=0))
+        
+        # cell_text[cpt_tab][0] = f"\u0394 s = {mean_obs} \u00B1 {stddev_obs} |" \
+                                             # f"\u0394 a = {mean_actions} \u00B1 {stddev_actions}"
+        cell_text[cpt_tab][0] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
+
+        print(f'{row_headers[cpt_tab]} ; {column_headers[0]} -> {cell_text[cpt_tab][0]}')
+
+        # mean_actions = round(np.mean(np.nanmean(form_c_actions, axis=0)), 2)
+        # stddev_actions = round(np.mean(np.nanstd(form_c_actions, axis=0)), 2)
+        # stddev_actions = np.std(mean_actions)
+        # mean_obs = round(np.mean(np.nanmean(form_c_obs, axis=0)), 2)
+        # stddev_obs = round(np.mean(np.nanstd(form_c_obs, axis=0)), 2)
+        # stddev_obs = np.std(mean_obs)
+        mean_ds = np.mean(np.mean(form_c_ds, axis=0))
+        std_ds = np.mean(np.std(form_c_ds, axis=0))
+        
+        # cell_text[cpt_tab][1] = f"\u0394 s = {mean_obs} \u00B1 {stddev_obs} |" \
+                                             # f"\u0394 a = {mean_actions} \u00B1 {stddev_actions}"
+        cell_text[cpt_tab][1] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
+        
+        print(f'{row_headers[cpt_tab]} ; {column_headers[1]} -> {cell_text[cpt_tab][1]}')
+        cpt_tab += 1
+        
+    ## Plot delta s and delta a variance
+    fig, ax = plt.subplots()
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+    the_table = plt.table(cellText=cell_text,
+                          rowLabels=row_headers,
+                          rowColours=rcolors,
+                          rowLoc='right',
+                          colColours=ccolors,
+                          colLabels=column_headers,
+                          loc='center')
+    fig.tight_layout()
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(10)
+    plt.title(f'State and action mean and standard deviation on {args.environment}')
+    plt.show()

@@ -142,8 +142,7 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
             else:
                 plt.savefig(f"{spe_fig_path}_dim_{dim}_{label}", bbox_inches='tight')
 
-        plt.close()
-
+            plt.close()
 
 
 

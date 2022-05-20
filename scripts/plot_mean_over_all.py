@@ -264,6 +264,9 @@ if __name__ == '__main__':
                                        # mean_disagr-std_disagr,
                                        # mean_disagr+std_disagr,
                                        # facecolor='green', alpha=0.5)
+            ## init method = i; init episode = j
+
+    
     test_limits_disagr = [0, env._max_episode_steps,
                           0, args.disagr_plot_upper_lim]
     test_limits_pred_error = [0, env._max_episode_steps,
@@ -360,3 +363,5 @@ if __name__ == '__main__':
     example_fig_pred_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_disagr",
                                bbox_inches='tight')
     # plt.show()
+
+    
