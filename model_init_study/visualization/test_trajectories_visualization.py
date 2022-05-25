@@ -90,8 +90,8 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
                     has_nan[j] = True
                     pred_errors[j, i] = np.nan
-                if pred_errors[j, i] > 20:
-                    pred_errors[j, i] = 20
+                # if pred_errors[j, i] > 20:
+                    # pred_errors[j, i] = 20
         return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
@@ -109,10 +109,10 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 if has_nan[ind+1] or np.isinf(pred_errors[ind+1, t]) or np.isnan(pred_errors[ind+1, t]):
                     has_nan[ind+1] = True
                     pred_errors[ind, t] = np.nan
-                if pred_errors[ind, t] > 20:
-                    pred_errors[ind, t] = 20
-                if pred_errors[ind+1, t] > 20:
-                    pred_errors[ind, t] = 20
+                # if pred_errors[ind, t] > 20:
+                    # pred_errors[ind, t] = 20
+                # if pred_errors[ind+1, t] > 20:
+                    # pred_errors[ind, t] = 20
         return pred_errors
     
     def dump_plots(self, env_name, init_name, num_episodes, traj_type, dump_separate=False,

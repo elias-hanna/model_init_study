@@ -32,6 +32,7 @@ if __name__ == '__main__':
     import model_init_study
     import matplotlib.pyplot as plt
     from matplotlib import cm
+    from scipy.spatial import distance
     
     module_path = os.path.dirname(model_init_study.__file__)
 
@@ -107,6 +108,8 @@ if __name__ == '__main__':
     n_init_episodes = 4
     init_episodes = args.init_episodes #[5, 10, 15, 20]
     
+    train_trajs = np.empty((n_init_method, n_init_episodes, n_init_episodes, task_h, obs_dim))
+
     test_pred_trajs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim))
     test_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
     test_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
@@ -191,8 +194,16 @@ if __name__ == '__main__':
                                     rep_cpt*trajs_per_rep
                                     + trajs_per_rep] = rep_data['examples_pred_errors']
 
+                # train_trajs[i,j,rep_cpt*n_init_episode:
+                                # rep_cpt*trajs_per_rep
+                                # + trajs_per_rep] =rep_data['test_pred_trajs']
                 rep_cpt += 1
 
+            #### Jensen Shannon Divergence ####
+            jsd_metric = distance.jensenshannon(eval_distribution, expert_distribution)
+            
+
+            #### Mean Disagreement, Mean Prediction Error, Prediction Error vs Disagreement ####
             # Add to plot
 
             ## On test trajs
@@ -362,6 +373,12 @@ if __name__ == '__main__':
                                bbox_inches='tight')
     example_fig_pred_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_disagr",
                                bbox_inches='tight')
+
+
+
+
+
+    
     # plt.show()
 
     

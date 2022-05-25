@@ -86,15 +86,10 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 A[j,:] = controller_list[j](S[j,:])
 
             ## This will store recursively obtained pred err and disagr for given n-steps
-            rec_pred_err = 0
-            rec_disagr = 0
+            cum_disagr = [0.]*len(self.test_trajectories)
             
-            # batch_pred_delta_ns, batch_disagreement = self.model.forward_multiple(A, S,
-                                                                                  # mean=True,
-                                                                                  # disagr=True)
             loc_S = S.copy()
             loc_A = A.copy()
-
             ## For each traj point we do n step predictions to see disagr and error
             for k in range(self._n):
                 for j in range(len(self.test_trajectories)):
@@ -108,18 +103,23 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 for j in range(len(self.test_trajectories)):
                     ## Compute mean prediction from model samples
                     next_step_pred = batch_pred_delta_ns[j]
-                    mean_pred = [np.mean(next_step_pred[:,k]) for k in range(len(next_step_pred[0]))]
-                    # pred_trajs[j,i,:] = S[j,:]
+                    mean_pred = [np.mean(next_step_pred[:,k])
+                                 for k in range(len(next_step_pred[0]))]
                     loc_S[j,:] += mean_pred.copy()
-                    # pred_trajs[j,i,:] = mean_pred.copy()
-                    disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
-                    pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
-                    if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
-                        has_nan[j] = True
-                        pred_errors[j, i] = np.nan
-                    if pred_errors[j, i] > 20:
-                        pred_errors[j, i] = 20
-        return pred_trajs, disagrs, pred_errors
+                    cum_disagr[j] += np.mean(batch_disagreement[j].detach().numpy())
+                    
+            ## Now save the (cumulated) disagr and pred error values
+            for j in range(len(self.test_trajectories)):
+                # disagr for one point == cumulated disagr over prediction horizon self._n
+                disagrs[j,i] = cum_disagr[j]
+                # pred error for one point == pred error between recursive prediction and GT
+                pred_errors[j,i] = np.linalg.norm(loc_S[j,:]-self.test_trajectories[j,i+self._n,:])
+                
+                if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
+                    has_nan[j] = True
+                    pred_errors[j, i] = np.nan
+
+            return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
         pred_errors = np.empty((len(traj1), self.env_max_h))
@@ -136,10 +136,10 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 if has_nan[ind+1] or np.isinf(pred_errors[ind+1, t]) or np.isnan(pred_errors[ind+1, t]):
                     has_nan[ind+1] = True
                     pred_errors[ind, t] = np.nan
-                if pred_errors[ind, t] > 20:
-                    pred_errors[ind, t] = 20
-                if pred_errors[ind+1, t] > 20:
-                    pred_errors[ind, t] = 20
+                # if pred_errors[ind, t] > 20:
+                    # pred_errors[ind, t] = 20
+                # if pred_errors[ind+1, t] > 20:
+                    # pred_errors[ind, t] = 20
         return pred_errors
     
     def dump_plots(self, env_name, init_name, num_episodes, traj_type, dump_separate=False,
