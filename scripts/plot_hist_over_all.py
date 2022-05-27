@@ -91,6 +91,14 @@ if __name__ == '__main__':
 
     ssr_vis = StateSpaceRepartitionVisualization(params)
 
+    ## Load 10 NS (all evaluated individuals) data
+    ns_all_eval_data = np.load(f'{args.environment}_trajectories_all.npz')
+    ns_all_eval_trajs = ns_all_eval_data['trajectories']
+    ns_all_eval_params = ns_all_eval_data['params']
+
+    
+    import pdb; pdb.set_trace()
+    exit(0)
     ## Plot table with delta S mean and stddev (prediction target) + delta A mean and stddev    
     column_headers = [init_method for init_method in init_methods]
     row_headers = [init_episode for init_episode in init_episodes]
