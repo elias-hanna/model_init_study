@@ -1,3 +1,142 @@
+import numpy as np
+from multiprocessing import cpu_count
+
+import time
+
+def KLdivergence(x, y):
+  """Compute the Kullback-Leibler divergence between two multivariate samples.
+  Parameters
+  ----------
+  x : 2D array (n,d)
+    Samples from distribution P, which typically represents the true
+    distribution.
+  y : 2D array (m,d)
+    Samples from distribution Q, which typically represents the approximate
+    distribution.
+  Returns
+  -------
+  out : float
+    The estimated Kullback-Leibler divergence D(P||Q).
+  References
+  ----------
+  Pérez-Cruz, F. Kullback-Leibler divergence estimation of
+  continuous distributions IEEE International Symposium on Information
+  Theory, 2008.
+  """
+  # x=x[:1000]
+  # y=y[:1000]
+  from scipy.spatial import cKDTree as KDTree
+  # Check the dimensions are consistent
+  x = np.atleast_2d(x)
+  y = np.atleast_2d(y)
+
+  n,d = x.shape
+  m,dy = y.shape
+
+  assert(d == dy)
+
+  # Build a KD tree representation of the samples and find the nearest neighbour
+  # of each point in x.
+  xtree = KDTree(x)
+  ytree = KDTree(y)
+
+  # Get the first two nearest neighbours for x, since the closest one is the
+  # sample itself.
+  nn_x = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)
+  nn_y = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)
+  r = nn_x[0][:,1]
+  s = nn_y[0]
+
+  # r = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)[0][:,1]
+  # s = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)[0]
+
+  # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
+  # on the first term of the right hand side.
+  ## quick fix to prevent infs put them at 0 so they are ignored...
+  r[r==np.inf] = 0
+  s[s==np.inf] = 0
+  ## quick fix to prevent division by zero
+  ## while keeping the identical samples between the two distributions
+  r += 0.0000000001
+  s += 0.0000000001
+  return -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
+
+
+def JSdivergence(x, y):
+    from scipy.spatial import cKDTree as KDTree
+  
+    # x=x[:1000]
+    # y=y[:1000]
+    # Check the dimensions are consistent
+    x = np.atleast_2d(x)
+    y = np.atleast_2d(y)
+    
+    n,d = x.shape
+    m,dy = y.shape
+    
+    assert(d == dy)
+
+    # Build a KD tree representation of the samples and find the nearest neighbour
+    # of each point in x.
+    xtree = KDTree(x)
+    ytree = KDTree(y)
+    
+    ### Do x || m
+    # Get the first two nearest neighbours for x, since the closest one is the
+    # sample itself.
+    nn_x = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)
+    nn_y = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)
+    r = nn_x[0][:,1]
+    s = nn_y[0]
+    
+    # r = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)[0][:,1]
+    # s = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)[0]
+    
+    # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
+    # on the first term of the right hand side.
+    ## quick fix to prevent infs put them at 0 so they are ignored...
+    r[r==np.inf] = 0
+    s[s==np.inf] = 0
+    ## quick fix to prevent division by zero
+    ## while keeping the identical samples between the two distributions
+    r += 0.0000000001
+    s += 0.0000000001
+
+    mu = 1/2*(r+s)
+
+    kl_x_m = -np.log(r/mu).sum() * d / n + np.log(m / (n - 1.))
+
+    ### Do y || m
+    # Get the first two nearest neighbours for x, since the closest one is the
+    # sample itself.
+    nn_x = xtree.query(y, k=1, eps=.01, p=2, workers=cpu_count()-1)
+    nn_y = ytree.query(y, k=2, eps=.01, p=2, workers=cpu_count()-1)
+    r = nn_x[0]
+    s = nn_y[0][:,1]
+    
+    # r = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)[0][:,1]
+    # s = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)[0]
+    
+    # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
+    # on the first term of the right hand side.
+    ## quick fix to prevent infs put them at 0 so they are ignored...
+    r[r==np.inf] = 0
+    s[s==np.inf] = 0
+    ## quick fix to prevent division by zero
+    ## while keeping the identical samples between the two distributions
+    r += 0.0000000001
+    s += 0.0000000001
+
+    mu = 1/2*(r+s)
+
+    kl_y_m = -np.log(s/mu).sum() * d / n + np.log(m / (n - 1.))
+    
+    return 1/2*(kl_y_m + kl_x_m)
+    
+############################################################################################
+############################################################################################
+############################################################################################
+
 ## Call this piece of code from the top folder containing all env data ##
 if __name__ == '__main__':
     # Local imports
@@ -94,15 +233,36 @@ if __name__ == '__main__':
     ## Load 10 NS (all evaluated individuals) data
     ns_all_eval_data = np.load(f'{args.environment}_trajectories_all.npz')
     ns_all_eval_trajs = ns_all_eval_data['trajectories']
+    # ns_all_eval_actions = ns_all_eval_data['actions']
     ns_all_eval_params = ns_all_eval_data['params']
 
-    
-    import pdb; pdb.set_trace()
-    exit(0)
+    ## Format data of actions and observations
+    # n_actions = ns_all_eval_actions.shape[0] * ns_all_eval_actions.shape[1]
+    n_obs = ns_all_eval_trajs.shape[0] * ns_all_eval_trajs.shape[1]
+    n_trans = ns_all_eval_trajs.shape[0] * (ns_all_eval_trajs.shape[1] - 1)
+
+    # form_ns_actions = np.empty((n_actions, act_dim)) 
+    form_ns_obs = np.empty((n_obs, obs_dim))
+    form_ns_ds = np.empty((n_trans, obs_dim))
+    curr_ptr = 0
+    curr_ds_ptr = 0
+
+    for i in range(len(ns_all_eval_trajs)):
+        # form_ns_actions[curr_ptr:curr_ptr+len(ns_all_eval_actions[i])] = ns_all_eval_actions[i]
+        form_ns_obs[curr_ptr:curr_ptr+len(ns_all_eval_trajs[i])] = ns_all_eval_trajs[i]
+        curr_ptr += len(ns_all_eval_trajs[i])
+        form_ns_ds[curr_ds_ptr:curr_ds_ptr+len(ns_all_eval_trajs[i])-1] = ns_all_eval_trajs[i][1:] - ns_all_eval_trajs[i][:-1]
+        curr_ds_ptr += len(ns_all_eval_trajs[i])-1
+
     ## Plot table with delta S mean and stddev (prediction target) + delta A mean and stddev    
     column_headers = [init_method for init_method in init_methods]
     row_headers = [init_episode for init_episode in init_episodes]
     cell_text = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
+    rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
+    ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
+
+    ## Plot table with Jensen Shannon divergence for NS vs considered data distribution
+    cell_text_js = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
     rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
     ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
 
@@ -169,7 +329,9 @@ if __name__ == '__main__':
                 curr_ptr += len(actions[1][i][j])
                 form_c_ds[curr_ds_ptr:curr_ds_ptr+len(observations[1][i][j])-1] = observations[1][i][j][1:] - observations[1][i][j][:-1]
                 curr_ds_ptr += len(observations[0][i][j])-1
-                
+
+        
+        ### PLOT DATA REPARTITION HISTOGRAM ###
         ssr_vis.set_trajectories(form_actions)
         ssr_vis.set_concurrent_trajectories(form_c_actions)
         
@@ -184,36 +346,34 @@ if __name__ == '__main__':
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train',
                            spe_fig_path=fig_path, use_concurrent_trajs=True, legends=args.init_methods)
 
-        ## For init_method[0]
-        # mean_actions = round(np.mean(np.nanmean(form_actions, axis=0)), 2)
-        # stddev_actions = round(np.mean(np.nanstd(form_actions, axis=0)), 2)
-        # stddev_actions = np.std(mean_actions)
-        # mean_obs = round(np.mean(np.nanmean(form_obs, axis=0)), 2)
-        # stddev_obs = round(np.mean(np.nanstd(form_obs, axis=0)), 2)
-        # stddev_obs = np.std(mean_obs)
-        mean_ds = np.mean(np.mean(form_ds, axis=0))
-        std_ds = np.mean(np.std(form_ds, axis=0))
+        ### PLOT DELTA S AND A MEAN AND STDDEV ###
+        # First init method
+        mean_ds = round(np.mean(np.mean(form_ds, axis=0)), 6)
+        std_ds = round(np.mean(np.std(form_ds, axis=0)), 6)
         
-        # cell_text[cpt_tab][0] = f"\u0394 s = {mean_obs} \u00B1 {stddev_obs} |" \
-                                             # f"\u0394 a = {mean_actions} \u00B1 {stddev_actions}"
         cell_text[cpt_tab][0] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
 
         print(f'{row_headers[cpt_tab]} ; {column_headers[0]} -> {cell_text[cpt_tab][0]}')
 
-        # mean_actions = round(np.mean(np.nanmean(form_c_actions, axis=0)), 2)
-        # stddev_actions = round(np.mean(np.nanstd(form_c_actions, axis=0)), 2)
-        # stddev_actions = np.std(mean_actions)
-        # mean_obs = round(np.mean(np.nanmean(form_c_obs, axis=0)), 2)
-        # stddev_obs = round(np.mean(np.nanstd(form_c_obs, axis=0)), 2)
-        # stddev_obs = np.std(mean_obs)
-        mean_ds = np.mean(np.mean(form_c_ds, axis=0))
-        std_ds = np.mean(np.std(form_c_ds, axis=0))
+        # Second init method
+        mean_ds = round(np.mean(np.mean(form_c_ds, axis=0)), 7)
+        std_ds = round(np.mean(np.std(form_c_ds, axis=0)), 7)
         
-        # cell_text[cpt_tab][1] = f"\u0394 s = {mean_obs} \u00B1 {stddev_obs} |" \
-                                             # f"\u0394 a = {mean_actions} \u00B1 {stddev_actions}"
         cell_text[cpt_tab][1] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
         
         print(f'{row_headers[cpt_tab]} ; {column_headers[1]} -> {cell_text[cpt_tab][1]}')
+
+        ### PLOT JENSEN SHANNON DIVERGENCE BETWEEN NS DATA DISTRIB AND CONSIDERED INIT ###
+        # First init method
+        js = JSdivergence(form_ns_obs, form_obs)
+        
+        cell_text_js[cpt_tab][0] = f"{js}"
+
+        # Second init method
+        js_c = JSdivergence(form_ns_obs, form_c_obs)
+        
+        cell_text_js[cpt_tab][1] = f"{js_c}"
+        
         cpt_tab += 1
         
     ## Plot delta s and delta a variance
@@ -231,5 +391,26 @@ if __name__ == '__main__':
     fig.tight_layout()
     the_table.auto_set_font_size(False)
     the_table.set_fontsize(10)
-    plt.title(f'State and action mean and standard deviation on {args.environment}')
-    plt.show()
+    plt.title(f'State and action mean and standard deviation on {args.environment} environment', y=.7)
+    
+    plt.savefig(f"{args.environment}_delta_s_a", dpi=300, bbox_inches='tight')
+    ## Plot JS divergence
+    fig, ax = plt.subplots()
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+    the_table = plt.table(cellText=cell_text_js,
+                          rowLabels=row_headers,
+                          rowColours=rcolors,
+                          rowLoc='right',
+                          colColours=ccolors,
+                          colLabels=column_headers,
+                          loc='center')
+    fig.tight_layout()
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(10)
+    plt.title(f'Jensen Shannon divergence between \n initialization methods data distributions and Novelty Search \n obtained data distribution on {args.environment} environment', y=.7)
+    
+    plt.savefig(f"{args.environment}_jensen_shannon_divergence", dpi=300, bbox_inches='tight')
+
+    # plt.show()

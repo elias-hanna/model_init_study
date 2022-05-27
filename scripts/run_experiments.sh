@@ -1,6 +1,10 @@
 #!/bin/bash
 # run_experiments
 
+##################################################
+##########Execute from data folder################
+##################################################
+
 environments=(ant ball_in_cup redundant_arm fetch_pick_and_place)
 pred_error_plot_upper_limits=(20 5 1.25 2.5) # warning needs to be in same order as envs
 disagr_plot_upper_limits=(20 1 1.25 0.3) # warning needs to be in same order as envs
