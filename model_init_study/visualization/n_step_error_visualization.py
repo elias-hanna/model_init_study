@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from model_init_study.visualization.visualization import VisualizationMethod
 
-class TestTrajectoriesVisualization(VisualizationMethod):
+class NStepErrorVisualization(VisualizationMethod):
     def __init__(self, params):
         super().__init__(params=params)
         self._process_params(params)
@@ -62,7 +62,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
 
         pred_trajs = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
         disagrs = np.empty((len(self.test_trajectories), self.env_max_h))
-        pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
+        pred_errors = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
         
         A = np.empty((len(self.test_trajectories), self._action_dim))
         S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -80,16 +80,18 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         loc_A = np.empty((len(self.test_trajectories), self._action_dim))
         loc_S = np.empty((len(self.test_trajectories), self._obs_dim))
         
-        for i in range(self.env_max_h):
+        for i in range(self.env_max_h-self._n):
             for j in range(len(self.test_trajectories)):
                 S[j,:] = self.test_trajectories[j,i,:]
                 A[j,:] = controller_list[j](S[j,:])
-
+                pred_trajs[j,i,:] = S[j,:]
+                
             ## This will store recursively obtained pred err and disagr for given n-steps
             cum_disagr = [0.]*len(self.test_trajectories)
             
             loc_S = S.copy()
             loc_A = A.copy()
+            # import pdb; pdb.set_trace()
             ## For each traj point we do n step predictions to see disagr and error
             for k in range(self._n):
                 for j in range(len(self.test_trajectories)):
@@ -106,6 +108,7 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                     mean_pred = [np.mean(next_step_pred[:,k])
                                  for k in range(len(next_step_pred[0]))]
                     loc_S[j,:] += mean_pred.copy()
+                    loc_d = np.mean(batch_disagreement[j].detach().numpy())
                     cum_disagr[j] += np.mean(batch_disagreement[j].detach().numpy())
                     
             ## Now save the (cumulated) disagr and pred error values
@@ -113,13 +116,14 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 # disagr for one point == cumulated disagr over prediction horizon self._n
                 disagrs[j,i] = cum_disagr[j]
                 # pred error for one point == pred error between recursive prediction and GT
-                pred_errors[j,i] = np.linalg.norm(loc_S[j,:]-self.test_trajectories[j,i+self._n,:])
+                for dim in range(self._obs_dim):
+                    pred_errors[j,i,dim] = np.linalg.norm(loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim])
                 
-                if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
+                if has_nan[j] or np.isinf(pred_errors[j, i]).any() or np.isnan(pred_errors[j, i]).any():
                     has_nan[j] = True
-                    pred_errors[j, i] = np.nan
+                    pred_errors[j, i, :] = np.nan
 
-            return pred_trajs, disagrs, pred_errors
+        return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
         pred_errors = np.empty((len(traj1), self.env_max_h))
@@ -181,100 +185,74 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         run_name = f'{env_name}_{init_name}_{num_episodes}'
         fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
         os.makedirs(fig_path, exist_ok=True)
-        ## Compute mean and stddev of trajs disagreement
-        mean_disagr = np.nanmean(disagrs, axis=0)
-        std_disagr = np.nanstd(disagrs, axis=0)
-        ## Compute mean and stddev of trajs prediction error
-        mean_pred_error = np.nanmean(pred_errors, axis=0)
-        std_pred_error = np.nanstd(pred_errors, axis=0)
-            
-        ## Create fig and ax
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ## Prepare plot
-        labels = ['Number of steps on environment', 'Mean ensemble disagreement']
-        limits = [0, len(mean_disagr),
-                  min(mean_disagr-std_disagr), max(mean_disagr+std_disagr)]
-        self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
 
-        ## Figure for model ensemble disagreement
-        plt.plot(range(len(mean_disagr)), mean_disagr, 'k-')
-        if plot_stddev:
-            plt.fill_between(range(len(mean_disagr)),
-                             mean_disagr-std_disagr,
-                             mean_disagr+std_disagr,
-                             facecolor='green', alpha=0.5)
-        ## Set plot title
-        plt.title(f"Mean model ensemble disagreeement along {traj_type} trajectories \n{init_name} on {num_episodes} episodes\n{label}")
-        ## Save fig
-        plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_disagr_{traj_type}",
-                    bbox_inches='tight')
+        print(f"Dumping figures on path: {fig_path}")
+        ## For each pred_traj (here == test trajs)
+        # for pred_traj in pred_trajs:
+        for i in range(len(pred_trajs)):
+            pred_traj = pred_trajs[i]
+            pred_error = pred_errors[i]
+            disagr = disagrs[i]
+            for dim in range(pred_traj.shape[1]):
+                ### Model prediction error ###
 
-        if dump_separate:
-            for i in range(len(disagrs)):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 ## Prepare plot
-                labels = ['Number of steps on environment', 'Ensemble disagreement']
-                limits = [0, len(disagrs[i]),
-                          min(disagrs[i]), max(disagrs[i])]
+                labels = ['Number of steps on environment',
+                          f'Trajectory on dimension {dim} on label {label}']
+                limits = [0, len(pred_traj[:,dim]),
+                          min(pred_traj[:, dim]), max(pred_traj[:,dim])]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
                 ## Figure for model ensemble disagreement
-                plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
+                plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+
+                ## Add the lines for each pred error
+                for t in range(len(pred_traj)):
+                    x = [t, t]
+                    y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
+                    plt.plot(x, y, 'g')
+                
+                ## Add the pred error for each step
                 ## Set plot title
-                plt.title(f"Mean model ensemble disagreeement along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title(f"{self._n} step model ensemble prediction error along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_disagr_{traj_type}",
+                plt.savefig(f"{fig_path}/{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}",
                             bbox_inches='tight')
 
-        ## Make dump dirs
-        fig_path = os.path.join(self.dump_path, f'{run_name}/pred_error')
-        os.makedirs(fig_path, exist_ok=True)        
-            
-        ## Create fig and ax
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ## Prepare plot
-        labels = ['Number of steps on environment', 'Mean prediction error']
-        limits = [0, len(mean_pred_error),
-                  min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
-        self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+                plt.close()
+                ### Model Ensemble Disagreement ###
 
-        ## Figure for prediction error
-        plt.plot(range(len(mean_pred_error)), mean_pred_error, 'k-')
-        
-        if plot_stddev:
-            plt.fill_between(range(len(mean_pred_error)),
-                             mean_pred_error-std_pred_error,
-                             mean_pred_error+std_pred_error,
-                             facecolor='green', alpha=0.5)
-        ## Set plot title
-        plt.title(f"Mean prediction error along {traj_type} trajectories\n{init_name} on {num_episodes} episodes\n{label}")
-        ## Save fig
-        plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_pred_error_{traj_type}",
-                    bbox_inches='tight')
-
-        if dump_separate:
-            for i in range(len(pred_errors)):
                 ## Create fig and ax
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 ## Prepare plot
-                labels = ['Number of steps on environment', 'Prediction Error']
-                limits = [0, len(pred_errors[i]),
-                          min(pred_errors[i]), max(pred_errors[i])]
+                labels = ['Number of steps on environment',
+                          f'Trajectory on dimension {dim} on label {label}']
+                limits = [0, len(pred_traj[:,dim]),
+                          min(pred_traj[:, dim]), max(pred_traj[:,dim])]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
                 ## Figure for model ensemble disagreement
-                plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
+                plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+
+                ## Add the lines for each pred error
+                for t in range(len(pred_traj)):
+                    x = [t, t]
+                    y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
+                    plt.plot(x, y, 'g')
+                    
+                ## Add the pred error for each step
                 ## Set plot title
-                plt.title(f"Mean prediction error along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title(f"{self._n} step model ensemble disagreement along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_pred_error_{traj_type}",
+                plt.savefig(f"{fig_path}/{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}",
                             bbox_inches='tight')
 
+                plt.close()
+            
         if show:
             plt.show()
         plt.close()

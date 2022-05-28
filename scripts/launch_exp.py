@@ -17,6 +17,8 @@ if __name__ == '__main__':
         import StateSpaceRepartitionVisualization
     from model_init_study.visualization.test_trajectories_visualization \
         import TestTrajectoriesVisualization
+    from model_init_study.visualization.n_step_error_visualization \
+        import NStepErrorVisualization
 
     from model_init_study.visualization.fetch_pick_and_place_separator \
         import FetchPickAndPlaceSeparator
@@ -192,14 +194,22 @@ if __name__ == '__main__':
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
+    n_step_visualizer = NStepErrorVisualization(params)
 
     ## Visualize state space repartition (no need we plot it afterwards)
     # ssr_visualizer = StateSpaceRepartitionVisualization(params)
     # ssr_visualizer.set_trajectories(train_trajectories)
     # ssr_visualizer.dump_plots(args.environment, args.init_method, args.init_episodes, 'train')
 
+
     ## Visualize example trajectories
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
+    ## Visualize n step error and disagreement
+    examples_n_step_trajs, examples_n_step_disagrs, examples_n_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        args.init_method,
+        args.init_episodes,
+        'examples', dump_separate=True, no_sep=True)
 
     examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
         args.environment,
@@ -228,6 +238,15 @@ if __name__ == '__main__':
             test_actions[i, j, :] = test_transitions[i][j][0]
 
     ## Visualize test trajectories
+
+    ## Visualize n step error and disagreement
+    n_step_visualizer.set_test_trajectories(test_trajectories)
+    test_n_step_trajs, test_n_step_disagrs, test_n_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        args.init_method,
+        args.init_episodes,
+        'test', dump_separate=True, no_sep=True)
+
     test_traj_visualizer.set_test_trajectories(test_trajectories)
     test_pred_trajs, test_disagrs, test_pred_errors = test_traj_visualizer.dump_plots(
         args.environment,
@@ -238,6 +257,7 @@ if __name__ == '__main__':
     data_path = os.path.join(
         args.dump_path,
         f'{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
+
     
     np.savez(data_path,
              test_pred_trajs=test_pred_trajs,
@@ -246,6 +266,12 @@ if __name__ == '__main__':
              examples_pred_trajs=examples_pred_trajs,
              examples_disagrs=examples_disagrs,
              examples_pred_errors=examples_pred_errors,
+             test_n_step_trajs=test_n_step_trajs,
+             test_n_step_disagrs=test_n_step_disagrs,
+             test_n_step_pred_errors=test_n_step_pred_errors,
+             examples_n_step_trajs=examples_n_step_trajs,
+             examples_n_step_disagrs=examples_n_step_disagrs,
+             examples_n_step_pred_errors=examples_n_step_pred_errors,
              train_trajs=train_trajectories,
              train_actions=train_actions,
              test_trajs=test_trajectories,

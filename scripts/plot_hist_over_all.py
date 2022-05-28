@@ -65,8 +65,8 @@ def KLdivergence(x, y):
 def JSdivergence(x, y):
     from scipy.spatial import cKDTree as KDTree
   
-    # x=x[:1000]
-    # y=y[:1000]
+    x=x[:1000]
+    y=y[:1000]
     # Check the dimensions are consistent
     x = np.atleast_2d(x)
     y = np.atleast_2d(y)
