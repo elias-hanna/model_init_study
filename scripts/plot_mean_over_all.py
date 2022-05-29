@@ -123,13 +123,21 @@ if __name__ == '__main__':
     example_disagrs = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
     example_pred_errors = np.empty((n_init_method, n_init_episodes, n_total_trajs, task_h))
 
-    test_n_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
-    test_n_step_disagrs = np.empty((n_total_trajs, task_h))
-    test_n_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
+    example_1_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    example_1_step_disagrs = np.empty((n_total_trajs, task_h))
+    example_1_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
 
-    example_n_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
-    example_n_step_disagrs = np.empty((n_total_trajs, task_h))
-    example_n_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
+    example_5_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    example_5_step_disagrs = np.empty((n_total_trajs, task_h))
+    example_5_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
+
+    example_10_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    example_10_step_disagrs = np.empty((n_total_trajs, task_h))
+    example_10_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
+
+    example_20_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
+    example_20_step_disagrs = np.empty((n_total_trajs, task_h))
+    example_20_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
 
     ## Do a new plot
     ## Will contain all means on a single plot
@@ -207,36 +215,58 @@ if __name__ == '__main__':
                                     + trajs_per_rep] = rep_data['examples_pred_errors']
                 
                 ### For N step vis ###
-                test_n_step_trajs[rep_cpt*trajs_per_rep:
-                                  rep_cpt*trajs_per_rep
-                                  + trajs_per_rep] = rep_data['test_n_step_trajs']
-                test_n_step_disagrs[rep_cpt*trajs_per_rep:
-                                    rep_cpt*trajs_per_rep
-                                    + trajs_per_rep] = rep_data['test_n_step_disagrs']
-                test_n_step_pred_errors[rep_cpt*trajs_per_rep:
-                                        rep_cpt*trajs_per_rep
-                                        + trajs_per_rep] = rep_data['test_n_step_pred_errors']
-                
-                example_n_step_trajs[rep_cpt*trajs_per_rep:
+                example_1_step_trajs[rep_cpt*trajs_per_rep:
                                      rep_cpt*trajs_per_rep
-                                     + trajs_per_rep] = rep_data['examples_n_step_trajs']
-                example_n_step_disagrs[rep_cpt*trajs_per_rep:
+                                     + trajs_per_rep] = rep_data['examples_1_step_trajs']
+                example_1_step_disagrs[rep_cpt*trajs_per_rep:
                                        rep_cpt*trajs_per_rep
-                                       + trajs_per_rep] = rep_data['examples_n_step_disagrs']
-                example_n_step_pred_errors[rep_cpt*trajs_per_rep:
+                                       + trajs_per_rep] = rep_data['examples_1_step_disagrs']
+                example_1_step_pred_errors[rep_cpt*trajs_per_rep:
                                            rep_cpt*trajs_per_rep
-                                           + trajs_per_rep] = rep_data['examples_n_step_pred_errors']
+                                           + trajs_per_rep] = rep_data['examples_1_step_pred_errors']
+
+                example_5_step_trajs[rep_cpt*trajs_per_rep:
+                                     rep_cpt*trajs_per_rep
+                                     + trajs_per_rep] = rep_data['examples_5_step_trajs']
+                example_5_step_disagrs[rep_cpt*trajs_per_rep:
+                                       rep_cpt*trajs_per_rep
+                                       + trajs_per_rep] = rep_data['examples_5_step_disagrs']
+                example_5_step_pred_errors[rep_cpt*trajs_per_rep:
+                                           rep_cpt*trajs_per_rep
+                                           + trajs_per_rep] = rep_data['examples_5_step_pred_errors']
+
+                example_10_step_trajs[rep_cpt*trajs_per_rep:
+                                     rep_cpt*trajs_per_rep
+                                     + trajs_per_rep] = rep_data['examples_10_step_trajs']
+                example_10_step_disagrs[rep_cpt*trajs_per_rep:
+                                       rep_cpt*trajs_per_rep
+                                       + trajs_per_rep] = rep_data['examples_10_step_disagrs']
+                example_10_step_pred_errors[rep_cpt*trajs_per_rep:
+                                           rep_cpt*trajs_per_rep
+                                           + trajs_per_rep] = rep_data['examples_10_step_pred_errors']
+
+                example_20_step_trajs[rep_cpt*trajs_per_rep:
+                                     rep_cpt*trajs_per_rep
+                                     + trajs_per_rep] = rep_data['examples_20_step_trajs']
+                example_20_step_disagrs[rep_cpt*trajs_per_rep:
+                                       rep_cpt*trajs_per_rep
+                                       + trajs_per_rep] = rep_data['examples_20_step_disagrs']
+                example_20_step_pred_errors[rep_cpt*trajs_per_rep:
+                                           rep_cpt*trajs_per_rep
+                                           + trajs_per_rep] = rep_data['examples_20_step_pred_errors']
 
                 rep_cpt += 1
 
-            # import pdb ; pdb.set_trace()
                 
             #### N step Disagreement and Prediction Error ####
             #### We only do it on example trajs as test trajs changes... between reps ####
+
+            ## n = 1
+            
             for i in range(trajs_per_rep):
-                pred_trajs = example_n_step_trajs[i::2]
-                pred_errors = example_n_step_pred_errors[i::2]
-                disagrs = example_n_step_disagrs[i::2]
+                pred_trajs = example_1_step_trajs[i::2]
+                pred_errors = example_1_step_pred_errors[i::2]
+                disagrs = example_1_step_disagrs[i::2]
 
                 pred_traj = np.nanmean(pred_trajs, axis=0)
                 pred_error = np.nanmean(pred_errors, axis=0)
@@ -321,7 +351,276 @@ if __name__ == '__main__':
                     
                     plt.close()
         
+            ## n = 5
             
+            for i in range(trajs_per_rep):
+                pred_trajs = example_5_step_trajs[i::2]
+                pred_errors = example_5_step_pred_errors[i::2]
+                disagrs = example_5_step_disagrs[i::2]
+
+                pred_traj = np.nanmean(pred_trajs, axis=0)
+                pred_error = np.nanmean(pred_errors, axis=0)
+                disagr = np.nanmean(disagrs, axis=0)
+
+                n = 5
+                for dim in range(pred_traj.shape[1]):
+                    ### Model prediction error ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
+                        plt.plot(x, y, 'g')
+                
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble prediction error along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_pred_error_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+                    ### Model Ensemble Disagreement ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
+                        plt.plot(x, y, 'g')
+                        
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble disagreement along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_disagr_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+
+            ## n = 10
+
+            for i in range(trajs_per_rep):
+                pred_trajs = example_10_step_trajs[i::2]
+                pred_errors = example_10_step_pred_errors[i::2]
+                disagrs = example_10_step_disagrs[i::2]
+
+                pred_traj = np.nanmean(pred_trajs, axis=0)
+                pred_error = np.nanmean(pred_errors, axis=0)
+                disagr = np.nanmean(disagrs, axis=0)
+
+                n = 10
+                for dim in range(pred_traj.shape[1]):
+                    ### Model prediction error ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
+                        plt.plot(x, y, 'g')
+                
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble prediction error along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_pred_error_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+                    ### Model Ensemble Disagreement ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
+                        plt.plot(x, y, 'g')
+                        
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble disagreement along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_disagr_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+
+            ## n = 20
+       
+            for i in range(trajs_per_rep):
+                pred_trajs = example_20_step_trajs[i::2]
+                pred_errors = example_20_step_pred_errors[i::2]
+                disagrs = example_20_step_disagrs[i::2]
+
+                pred_traj = np.nanmean(pred_trajs, axis=0)
+                pred_error = np.nanmean(pred_errors, axis=0)
+                disagr = np.nanmean(disagrs, axis=0)
+
+                n = 20
+                for dim in range(pred_traj.shape[1]):
+                    ### Model prediction error ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
+                        plt.plot(x, y, 'g')
+                
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble prediction error along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_pred_error_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+                    ### Model Ensemble Disagreement ###
+                    
+                    ## Create fig and ax
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ## Prepare plot
+                    labels = ['Number of steps on environment',
+                              f'Trajectory on dimension {dim}']
+                    limits = [0, len(pred_traj[:,dim]),
+                              min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+
+                    ## Set plot labels
+                    ax.set_xlabel(labels[0])
+                    ax.set_ylabel(labels[1])
+                    
+                    ## Set plot limits
+                    x_min = limits[0]; x_max = limits[1]; y_min = limits[2]; y_max = limits[3]
+                    
+                    ax.set_xlim(x_min,x_max)
+                    ax.set_ylim(y_min,y_max)
+
+                    ## Figure for model ensemble disagreement
+                    plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+                    
+                    ## Add the lines for each pred error
+                    for t in range(len(pred_traj)):
+                        x = [t, t]
+                        y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
+                        plt.plot(x, y, 'g')
+                        
+                    ## Add the pred error for each step
+                    ## Set plot title
+                    plt.title(f"{n} step model ensemble disagreement along example trajectories on dimension {dim}\n{init_method} on {init_episode} episodes\n{args.environment}")
+                    ## Save fig
+                    plt.savefig(f"{args.dump_path}/{i}_{n}_step_trajectories_{args.environment}_disagr_example_dim_{dim}",
+                                bbox_inches='tight')
+                    
+                    plt.close()
+        
             #### Mean Disagreement, Mean Prediction Error, Prediction Error vs Disagreement ####
             # Add to plot
 

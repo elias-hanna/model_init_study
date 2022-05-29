@@ -213,13 +213,41 @@ if __name__ == '__main__':
 
     ## Visualize example trajectories
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
-    ## Visualize n step error and disagreement
-    examples_n_step_trajs, examples_n_step_disagrs, examples_n_step_pred_errors = n_step_visualizer.dump_plots(
+    ## Visualize n step error and disagreement ###
+
+    n_step_visualizer.set_n(1)
+    
+    examples_1_step_trajs, examples_1_step_disagrs, examples_1_step_pred_errors = n_step_visualizer.dump_plots(
         args.environment,
         args.init_method,
         args.init_episodes,
         'examples', dump_separate=True, no_sep=True)
 
+    n_step_visualizer.set_n(5)
+
+    examples_5_step_trajs, examples_5_step_disagrs, examples_5_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        args.init_method,
+        args.init_episodes,
+        'examples', dump_separate=True, no_sep=True)
+
+    n_step_visualizer.set_n(10)
+
+    examples_10_step_trajs, examples_10_step_disagrs, examples_10_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        args.init_method,
+        args.init_episodes,
+        'examples', dump_separate=True, no_sep=True)
+
+    n_step_visualizer.set_n(20)
+    
+    examples_20_step_trajs, examples_20_step_disagrs, examples_20_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        args.init_method,
+        args.init_episodes,
+        'examples', dump_separate=True, no_sep=True)
+
+    ### Full recursive prediction visualizations ###
     examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
         args.environment,
         args.init_method,
@@ -248,14 +276,15 @@ if __name__ == '__main__':
 
     ## Visualize test trajectories
 
-    ## Visualize n step error and disagreement
-    n_step_visualizer.set_test_trajectories(test_trajectories)
-    test_n_step_trajs, test_n_step_disagrs, test_n_step_pred_errors = n_step_visualizer.dump_plots(
-        args.environment,
-        args.init_method,
-        args.init_episodes,
-        'test', dump_separate=True, no_sep=True)
+    # ## Visualize n step error and disagreement
+    # n_step_visualizer.set_test_trajectories(test_trajectories)
+    # test_n_step_trajs, test_n_step_disagrs, test_n_step_pred_errors = n_step_visualizer.dump_plots(
+    #     args.environment,
+    #     args.init_method,
+    #     args.init_episodes,
+    #     'test', dump_separate=True, no_sep=True)
 
+    ### Full recursive prediction visualizations ###
     test_traj_visualizer.set_test_trajectories(test_trajectories)
     test_pred_trajs, test_disagrs, test_pred_errors = test_traj_visualizer.dump_plots(
         args.environment,
@@ -275,12 +304,21 @@ if __name__ == '__main__':
              examples_pred_trajs=examples_pred_trajs,
              examples_disagrs=examples_disagrs,
              examples_pred_errors=examples_pred_errors,
-             test_n_step_trajs=test_n_step_trajs,
-             test_n_step_disagrs=test_n_step_disagrs,
-             test_n_step_pred_errors=test_n_step_pred_errors,
-             examples_n_step_trajs=examples_n_step_trajs,
-             examples_n_step_disagrs=examples_n_step_disagrs,
-             examples_n_step_pred_errors=examples_n_step_pred_errors,
+             # test_n_step_trajs=test_n_step_trajs,
+             # test_n_step_disagrs=test_n_step_disagrs,
+             # test_n_step_pred_errors=test_n_step_pred_errors,
+             examples_1_step_trajs=examples_1_step_trajs,
+             examples_1_step_disagrs=examples_1_step_disagrs,
+             examples_1_step_pred_errors=examples_1_step_pred_errors,
+             examples_5_step_trajs=examples_5_step_trajs,
+             examples_5_step_disagrs=examples_5_step_disagrs,
+             examples_5_step_pred_errors=examples_5_step_pred_errors,
+             examples_10_step_trajs=examples_10_step_trajs,
+             examples_10_step_disagrs=examples_10_step_disagrs,
+             examples_10_step_pred_errors=examples_10_step_pred_errors,
+             examples_20_step_trajs=examples_20_step_trajs,
+             examples_20_step_disagrs=examples_20_step_disagrs,
+             examples_20_step_pred_errors=examples_20_step_pred_errors,
              train_trajs=train_trajectories,
              train_actions=train_actions,
              test_trajs=test_trajectories,
