@@ -79,6 +79,14 @@ if __name__ == '__main__':
         
     env = gym.make(env_register_id)
 
+    try:
+        max_step = env._max_episode_steps
+    except:
+        try:
+            max_step = env.max_steps
+        except:
+            raise AttributeError("Env does not allow access to _max_episode_steps or to max_steps")
+
     path_to_examples = os.path.join(module_path,
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
@@ -144,17 +152,17 @@ if __name__ == '__main__':
     example_fig_pred_disagr = plt.figure()
     example_ax_pred_disagr = example_fig_pred_disagr.add_subplot(111)
     # Init limits for each fig
-    test_limits_disagr = [0, env._max_episode_steps,
+    test_limits_disagr = [0, max_step,
                           0, 0]
-    test_limits_pred_error = [0, env._max_episode_steps,
+    test_limits_pred_error = [0, max_step,
                               0, 0]
-    test_limits_pred_disagr = [0, env._max_episode_steps,
+    test_limits_pred_disagr = [0, max_step,
                                0, 0]
-    example_limits_disagr = [0, env._max_episode_steps,
+    example_limits_disagr = [0, max_step,
                              0, 0]
-    example_limits_pred_error = [0, env._max_episode_steps,
+    example_limits_pred_error = [0, max_step,
                                  0, 0]
-    example_limits_pred_disagr = [0, env._max_episode_steps,
+    example_limits_pred_disagr = [0, max_step,
                                   0, 0]
 
     # Init labels for each fig
@@ -331,7 +339,7 @@ if __name__ == '__main__':
             if max(test_mean_disagr) > test_limits_disagr[3]:
                 test_limits_disagr[3] = max(test_mean_disagr)
             ## Figure for model ensemble disagreement
-            test_ax_disagr.plot(range(env._max_episode_steps), test_mean_disagr, '-',
+            test_ax_disagr.plot(range(max_step), test_mean_disagr, '-',
                                 color=colors(i*n_init_episodes + j),
                                 label=f'{init_method}_{init_episode}')
             ## Update plot params
@@ -340,7 +348,7 @@ if __name__ == '__main__':
             if max(test_mean_pred_error) > test_limits_pred_error[3]:
                 test_limits_pred_error[3] = max(test_mean_pred_error)
             ## Figure for pred_error
-            test_ax_pred_error.plot(range(env._max_episode_steps), test_mean_pred_error, '-',
+            test_ax_pred_error.plot(range(max_step), test_mean_pred_error, '-',
                                 color=colors(i*n_init_episodes + j),
                                     label=f'{init_method}_{init_episode}')
 
@@ -363,7 +371,7 @@ if __name__ == '__main__':
             if max(example_mean_disagr) < example_limits_disagr[3]:
                 example_limits_disagr[3] = max(example_mean_disagr)
             ## Figure for model ensemble disagreement
-            example_ax_disagr.plot(range(env._max_episode_steps), example_mean_disagr, '-',
+            example_ax_disagr.plot(range(max_step), example_mean_disagr, '-',
                                 color=colors(i*n_init_episodes + j),
                                    label=f'{init_method}_{init_episode}')
             ## Update plot params
@@ -372,7 +380,7 @@ if __name__ == '__main__':
             if max(example_mean_pred_error) < example_limits_pred_error[3]:
                 example_limits_pred_error[3] = max(example_mean_pred_error)
             ## Figure for pred_error
-            example_ax_pred_error.plot(range(env._max_episode_steps), example_mean_pred_error,'-',
+            example_ax_pred_error.plot(range(max_step), example_mean_pred_error,'-',
                                 color=colors(i*n_init_episodes + j),
                                        label=f'{init_method}_{init_episode}')
 
@@ -391,13 +399,13 @@ if __name__ == '__main__':
             ## init method = i; init episode = j
 
     
-    test_limits_disagr = [0, env._max_episode_steps,
+    test_limits_disagr = [0, max_step,
                           0, args.disagr_plot_upper_lim]
-    test_limits_pred_error = [0, env._max_episode_steps,
+    test_limits_pred_error = [0, max_step,
                               0, args.pred_err_plot_upper_lim]
-    example_limits_disagr = [0, env._max_episode_steps,
+    example_limits_disagr = [0, max_step,
                              0, args.disagr_plot_upper_lim]
-    example_limits_pred_error = [0, env._max_episode_steps,
+    example_limits_pred_error = [0, max_step,
                                  0, args.pred_err_plot_upper_lim]
 
     ## Plot params

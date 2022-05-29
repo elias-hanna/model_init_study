@@ -91,6 +91,15 @@ if __name__ == '__main__':
         
     env = gym.make(env_register_id)
 
+    try:
+        max_step = env._max_episode_steps
+    except:
+        try:
+            max_step = env.max_steps
+        except:
+            raise AttributeError("Env does not allow access to _max_episode_steps or to max_steps")
+
+
     path_to_examples = os.path.join(module_path,
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
@@ -150,7 +159,7 @@ if __name__ == '__main__':
         'path_to_test_trajectories': path_to_examples,
 
         'env': env,
-        'env_max_h': env._max_episode_steps,
+        'env_max_h': max_step,
     }
     
     ## Instanciate the initializer
