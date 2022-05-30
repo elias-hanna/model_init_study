@@ -1,72 +1,69 @@
 import numpy as np
 from multiprocessing import cpu_count
+from scipy.spatial import cKDTree as KDTree
 
 import time
 
-def KLdivergence(x, y):
-  """Compute the Kullback-Leibler divergence between two multivariate samples.
-  Parameters
-  ----------
-  x : 2D array (n,d)
-    Samples from distribution P, which typically represents the true
-    distribution.
-  y : 2D array (m,d)
-    Samples from distribution Q, which typically represents the approximate
-    distribution.
-  Returns
-  -------
-  out : float
-    The estimated Kullback-Leibler divergence D(P||Q).
-  References
-  ----------
-  Pérez-Cruz, F. Kullback-Leibler divergence estimation of
-  continuous distributions IEEE International Symposium on Information
-  Theory, 2008.
-  """
-  # x=x[:1000]
-  # y=y[:1000]
-  from scipy.spatial import cKDTree as KDTree
-  # Check the dimensions are consistent
-  x = np.atleast_2d(x)
-  y = np.atleast_2d(y)
+# def KLdivergence(x, y):
+#   """Compute the Kullback-Leibler divergence between two multivariate samples.
+#   Parameters
+#   ----------
+#   x : 2D array (n,d)
+#     Samples from distribution P, which typically represents the true
+#     distribution.
+#   y : 2D array (m,d)
+#     Samples from distribution Q, which typically represents the approximate
+#     distribution.
+#   Returns
+#   -------
+#   out : float
+#     The estimated Kullback-Leibler divergence D(P||Q).
+#   References
+#   ----------
+#   Pérez-Cruz, F. Kullback-Leibler divergence estimation of
+#   continuous distributions IEEE International Symposium on Information
+#   Theory, 2008.
+#   """
+#   # x=x[:1000]
+#   # y=y[:1000]
+#   from scipy.spatial import cKDTree as KDTree
+#   # Check the dimensions are consistent
+#   x = np.atleast_2d(x)
+#   y = np.atleast_2d(y)
 
-  n,d = x.shape
-  m,dy = y.shape
+#   n,d = x.shape
+#   m,dy = y.shape
 
-  assert(d == dy)
+#   assert(d == dy)
 
-  # Build a KD tree representation of the samples and find the nearest neighbour
-  # of each point in x.
-  xtree = KDTree(x)
-  ytree = KDTree(y)
+#   # Build a KD tree representation of the samples and find the nearest neighbour
+#   # of each point in x.
+#   xtree = KDTree(x)
+#   ytree = KDTree(y)
 
-  # Get the first two nearest neighbours for x, since the closest one is the
-  # sample itself.
-  nn_x = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)
-  nn_y = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)
-  r = nn_x[0][:,1]
-  s = nn_y[0]
+#   # Get the first two nearest neighbours for x, since the closest one is the
+#   # sample itself.
+#   nn_x = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)
+#   nn_y = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)
+#   r = nn_x[0][:,1]
+#   s = nn_y[0]
 
-  # r = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)[0][:,1]
-  # s = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)[0]
+#   # r = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)[0][:,1]
+#   # s = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)[0]
 
-  # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
-  # on the first term of the right hand side.
-  ## quick fix to prevent infs put them at 0 so they are ignored...
-  r[r==np.inf] = 0
-  s[s==np.inf] = 0
-  ## quick fix to prevent division by zero
-  ## while keeping the identical samples between the two distributions
-  r += 0.0000000001
-  s += 0.0000000001
-  return -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
+#   # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
+#   # on the first term of the right hand side.
+#   ## quick fix to prevent infs put them at 0 so they are ignored...
+#   r[r==np.inf] = 0
+#   s[s==np.inf] = 0
+#   ## quick fix to prevent division by zero
+#   ## while keeping the identical samples between the two distributions
+#   r += 0.0000000001
+#   s += 0.0000000001
+#   return -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
 
 
 def JSdivergence(x, y):
-    from scipy.spatial import cKDTree as KDTree
-  
-    x=x[:1000]
-    y=y[:1000]
     # Check the dimensions are consistent
     x = np.atleast_2d(x)
     y = np.atleast_2d(y)
@@ -189,21 +186,25 @@ if __name__ == '__main__':
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
+        os_indexes = [0, 1, 2] ## Outcome space is the relative position of the ball to the cup
     if args.environment == 'redundant_arm':
-        env_register_id = 'RedundantArm-v0'
+        env_register_id = 'RedundantArmPos-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        os_indexes = [20, 21] ## Outcome space is the xy end effector position
     if args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
         separator = FetchPickAndPlaceSeparator
         ss_min = -1
         ss_max = 1
+        os_indexes = [3, 4, 5] ## Outcome space is the object xyz position
     if args.environment == 'ant':
-        env_register_id = 'AntBulletEnvDeterministic-v0'
+        env_register_id = 'AntBulletEnvDeterministicPos-v0'
         separator = AntSeparator
         ss_min = -10
         ss_max = 10
+        os_indexes = [28, 29] ## Outcome space is the ant xy position
         
     env = gym.make(env_register_id)
 
@@ -364,13 +365,38 @@ if __name__ == '__main__':
         print(f'{row_headers[cpt_tab]} ; {column_headers[1]} -> {cell_text[cpt_tab][1]}')
 
         ### PLOT JENSEN SHANNON DIVERGENCE BETWEEN NS DATA DISTRIB AND CONSIDERED INIT ###
+        min_ns = np.min(form_ns_obs, axis=0)
+        min_obs = np.min(form_obs, axis=0)
+        min_c_obs = np.min(form_c_obs, axis=0)
+        max_ns = np.max(form_ns_obs, axis=0)
+        max_obs = np.max(form_obs, axis=0)
+        max_c_obs = np.max(form_c_obs, axis=0)
+
+        g_min = np.empty((obs_dim))
+        g_max = np.empty((obs_dim))
+        for dim in range(obs_dim):
+          g_min[dim] = min(min_ns[dim], min_obs[dim], min_c_obs[dim])
+          g_max[dim] = max(max_ns[dim], max_obs[dim], max_c_obs[dim])
+
+        # normalize
+        n_form_ns_obs = (form_ns_obs - g_min)/(g_max - g_min)
+        n_form_obs = (form_obs - g_min)/(g_max - g_min)
+        n_form_c_obs = (form_c_obs - g_min)/(g_max - g_min)
+        
         # First init method
-        js = JSdivergence(form_ns_obs, form_obs)
+        # js = JSdivergence(form_ns_obs[:, os_indexes], form_obs[:, os_indexes])
+        js = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_obs[:, os_indexes])
+        # Square root is the distance
+        js = np.sqrt(js)
         
         cell_text_js[cpt_tab][0] = f"{js}"
 
+        import pdb; pdb.set_trace()
         # Second init method
-        js_c = JSdivergence(form_ns_obs, form_c_obs)
+        # js_c = JSdivergence(form_ns_obs[:, os_indexes], form_c_obs[:, os_indexes])
+        js_c = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_c_obs[:, os_indexes])
+        # Square root is the distance
+        js_c = np.sqrt(js_c)
         
         cell_text_js[cpt_tab][1] = f"{js_c}"
         

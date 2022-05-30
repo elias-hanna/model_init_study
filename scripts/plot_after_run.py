@@ -57,7 +57,7 @@ if __name__ == '__main__':
         ss_min = -0.4
         ss_max = 0.4
     if args.environment == 'redundant_arm':
-        env_register_id = 'RedundantArm-v0'
+        env_register_id = 'RedundantArmPos-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         ss_min = -1
         ss_max = 1
     if args.environment == 'ant':
-        env_register_id = 'AntBulletEnvDeterministic-v0'
+        env_register_id = 'AntBulletEnvDeterministicPos-v0'
         separator = AntSeparator
         ss_min = -10
         ss_max = 10

@@ -60,9 +60,8 @@ class NStepErrorVisualization(VisualizationMethod):
         disagreements_list = []
         prediction_errors_list = []
 
-        pred_trajs = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
-        disagrs = np.empty((len(self.test_trajectories), self.env_max_h))
-        pred_errors = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
+        disagrs = np.zeros((len(self.test_trajectories), self.env_max_h))
+        pred_errors = np.zeros((len(self.test_trajectories), self.env_max_h, self._obs_dim))
         
         A = np.empty((len(self.test_trajectories), self._action_dim))
         S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -75,23 +74,25 @@ class NStepErrorVisualization(VisualizationMethod):
             # Init starting state
             # S[i,:] = self.test_trajectories[i,0,:]
 
-        has_nan = [False for _ in range(len(self.test_trajectories))]
-
         loc_A = np.empty((len(self.test_trajectories), self._action_dim))
         loc_S = np.empty((len(self.test_trajectories), self._obs_dim))
+
+        ended = [False] * len(self.test_trajectories)
         
         for i in range(self.env_max_h-self._n):
             for j in range(len(self.test_trajectories)):
                 S[j,:] = self.test_trajectories[j,i,:]
                 A[j,:] = controller_list[j](S[j,:])
-                pred_trajs[j,i,:] = S[j,:]
-                
+                if np.isnan(S[j,:]).any():
+                    ended[j] = True
+
+            if all(ended):
+                break
             ## This will store recursively obtained pred err and disagr for given n-steps
             cum_disagr = [0.]*len(self.test_trajectories)
             
             loc_S = S.copy()
             loc_A = A.copy()
-            # import pdb; pdb.set_trace()
             ## For each traj point we do n step predictions to see disagr and error
             for k in range(self._n):
                 for j in range(len(self.test_trajectories)):
@@ -113,16 +114,23 @@ class NStepErrorVisualization(VisualizationMethod):
                     
             ## Now save the (cumulated) disagr and pred error values
             for j in range(len(self.test_trajectories)):
+                if ended[j]:
+                    continue
+                
                 # disagr for one point == cumulated disagr over prediction horizon self._n
                 disagrs[j,i] = cum_disagr[j]
                 # pred error for one point == pred error between recursive prediction and GT
                 for dim in range(self._obs_dim):
-                    pred_errors[j,i,dim] = np.linalg.norm(loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim])
+                    # pred_errors[j,i,dim] = np.linalg.norm(loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim])
+                    ## Keep it signed
+                    pred_errors[j,i,dim] = loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim]
                 
-                if has_nan[j] or np.isinf(pred_errors[j, i]).any() or np.isnan(pred_errors[j, i]).any():
-                    has_nan[j] = True
-                    pred_errors[j, i, :] = np.nan
+                # if has_nan[j] or np.isinf(pred_errors[j, i]).any() or np.isnan(pred_errors[j, i]).any():
+                    # has_nan[j] = True
+                    # pred_errors[j, i, :] = np.nan
 
+        # import pdb; pdb.set_trace()
+        pred_trajs = self.test_trajectories
         return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
@@ -183,10 +191,12 @@ class NStepErrorVisualization(VisualizationMethod):
         pred_trajs, disagrs, pred_errors = model_trajs
         ## Make dump dirs
         run_name = f'{env_name}_{init_name}_{num_episodes}'
-        fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
-        os.makedirs(fig_path, exist_ok=True)
+        fig_path_disagr = os.path.join(self.dump_path, f'{run_name}/disagr')
+        os.makedirs(fig_path_disagr, exist_ok=True)
 
-        print(f"Dumping figures on path: {fig_path}")
+        fig_path_pred_error = os.path.join(self.dump_path, f'{run_name}/pred_error')
+        os.makedirs(fig_path_pred_error, exist_ok=True)
+
         ## For each pred_traj (here == test trajs)
         # for pred_traj in pred_trajs:
         for i in range(len(pred_trajs)):
@@ -203,7 +213,9 @@ class NStepErrorVisualization(VisualizationMethod):
                 labels = ['Number of steps on environment',
                           f'Trajectory on dimension {dim} on label {label}']
                 limits = [0, len(pred_traj[:,dim]),
-                          min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+                          min(pred_traj[:, dim]+pred_error[:, dim]),
+                          max(pred_traj[:,dim]+pred_error[:, dim])]
+
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
                 ## Figure for model ensemble disagreement
@@ -219,8 +231,9 @@ class NStepErrorVisualization(VisualizationMethod):
                 ## Set plot title
                 plt.title(f"{self._n} step model ensemble prediction error along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}",
-                            bbox_inches='tight')
+                fig_name = f"{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}"
+                plt.savefig(f"{fig_path_pred_error}/{fig_name}", bbox_inches='tight')
+                print(f"Dumping figure {fig_name} on path: {fig_path_pred_error}")
 
                 plt.close()
                 ### Model Ensemble Disagreement ###
@@ -232,7 +245,8 @@ class NStepErrorVisualization(VisualizationMethod):
                 labels = ['Number of steps on environment',
                           f'Trajectory on dimension {dim} on label {label}']
                 limits = [0, len(pred_traj[:,dim]),
-                          min(pred_traj[:, dim]), max(pred_traj[:,dim])]
+                          min(pred_traj[:, dim]+disagr[:]),
+                          max(pred_traj[:,dim]+disagr[:])]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
                 ## Figure for model ensemble disagreement
@@ -248,8 +262,9 @@ class NStepErrorVisualization(VisualizationMethod):
                 ## Set plot title
                 plt.title(f"{self._n} step model ensemble disagreement along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}",
-                            bbox_inches='tight')
+                fig_name = f"{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}"
+                plt.savefig(f"{fig_path_disagr}/{fig_name}", bbox_inches='tight')
+                print(f"Dumping figure {fig_name} on path: {fig_path_disagr}")
 
                 plt.close()
             
