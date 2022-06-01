@@ -224,21 +224,21 @@ if __name__ == '__main__':
         args.init_episodes,
         'examples', dump_separate=True, no_sep=True)
 
-    n_step_visualizer.set_n(5)
+    # n_step_visualizer.set_n(5)
 
-    examples_5_step_trajs, examples_5_step_disagrs, examples_5_step_pred_errors = n_step_visualizer.dump_plots(
-        args.environment,
-        args.init_method,
-        args.init_episodes,
-        'examples', dump_separate=True, no_sep=True)
+    # examples_5_step_trajs, examples_5_step_disagrs, examples_5_step_pred_errors = n_step_visualizer.dump_plots(
+    #     args.environment,
+    #     args.init_method,
+    #     args.init_episodes,
+    #     'examples', dump_separate=True, no_sep=True)
 
-    n_step_visualizer.set_n(10)
+    # n_step_visualizer.set_n(10)
 
-    examples_10_step_trajs, examples_10_step_disagrs, examples_10_step_pred_errors = n_step_visualizer.dump_plots(
-        args.environment,
-        args.init_method,
-        args.init_episodes,
-        'examples', dump_separate=True, no_sep=True)
+    # examples_10_step_trajs, examples_10_step_disagrs, examples_10_step_pred_errors = n_step_visualizer.dump_plots(
+    #     args.environment,
+    #     args.init_method,
+    #     args.init_episodes,
+    #     'examples', dump_separate=True, no_sep=True)
 
     n_step_visualizer.set_n(20)
     
@@ -311,12 +311,12 @@ if __name__ == '__main__':
              examples_1_step_trajs=examples_1_step_trajs,
              examples_1_step_disagrs=examples_1_step_disagrs,
              examples_1_step_pred_errors=examples_1_step_pred_errors,
-             examples_5_step_trajs=examples_5_step_trajs,
-             examples_5_step_disagrs=examples_5_step_disagrs,
-             examples_5_step_pred_errors=examples_5_step_pred_errors,
-             examples_10_step_trajs=examples_10_step_trajs,
-             examples_10_step_disagrs=examples_10_step_disagrs,
-             examples_10_step_pred_errors=examples_10_step_pred_errors,
+             # examples_5_step_trajs=examples_5_step_trajs,
+             # examples_5_step_disagrs=examples_5_step_disagrs,
+             # examples_5_step_pred_errors=examples_5_step_pred_errors,
+             # examples_10_step_trajs=examples_10_step_trajs,
+             # examples_10_step_disagrs=examples_10_step_disagrs,
+             # examples_10_step_pred_errors=examples_10_step_pred_errors,
              examples_20_step_trajs=examples_20_step_trajs,
              examples_20_step_disagrs=examples_20_step_disagrs,
              examples_20_step_pred_errors=examples_20_step_pred_errors,

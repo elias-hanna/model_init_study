@@ -129,7 +129,6 @@ class NStepErrorVisualization(VisualizationMethod):
                     # has_nan[j] = True
                     # pred_errors[j, i, :] = np.nan
 
-        # import pdb; pdb.set_trace()
         pred_trajs = self.test_trajectories
         return pred_trajs, disagrs, pred_errors
 
@@ -197,6 +196,9 @@ class NStepErrorVisualization(VisualizationMethod):
         fig_path_pred_error = os.path.join(self.dump_path, f'{run_name}/pred_error')
         os.makedirs(fig_path_pred_error, exist_ok=True)
 
+        print(f'Current working dir: {os.getcwd()}')
+        print(f'{self._n} step error vis dumping figs on {fig_path_pred_error} and {fig_path_disagr}')
+
         ## For each pred_traj (here == test trajs)
         # for pred_traj in pred_trajs:
         for i in range(len(pred_trajs)):
@@ -213,8 +215,8 @@ class NStepErrorVisualization(VisualizationMethod):
                 labels = ['Number of steps on environment',
                           f'Trajectory on dimension {dim} on label {label}']
                 limits = [0, len(pred_traj[:,dim]),
-                          min(pred_traj[:, dim]+pred_error[:, dim]),
-                          max(pred_traj[:,dim]+pred_error[:, dim])]
+                          min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+pred_error[:, dim])),
+                          max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+pred_error[:, dim]))]
 
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
@@ -233,7 +235,6 @@ class NStepErrorVisualization(VisualizationMethod):
                 ## Save fig
                 fig_name = f"{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}"
                 plt.savefig(f"{fig_path_pred_error}/{fig_name}", bbox_inches='tight')
-                print(f"Dumping figure {fig_name} on path: {fig_path_pred_error}")
 
                 plt.close()
                 ### Model Ensemble Disagreement ###
@@ -245,8 +246,8 @@ class NStepErrorVisualization(VisualizationMethod):
                 labels = ['Number of steps on environment',
                           f'Trajectory on dimension {dim} on label {label}']
                 limits = [0, len(pred_traj[:,dim]),
-                          min(pred_traj[:, dim]+disagr[:]),
-                          max(pred_traj[:,dim]+disagr[:])]
+                          min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+disagr[:])),
+                          max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+disagr[:]))]
                 self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
                 ## Figure for model ensemble disagreement
@@ -264,7 +265,6 @@ class NStepErrorVisualization(VisualizationMethod):
                 ## Save fig
                 fig_name = f"{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}"
                 plt.savefig(f"{fig_path_disagr}/{fig_name}", bbox_inches='tight')
-                print(f"Dumping figure {fig_name} on path: {fig_path_disagr}")
 
                 plt.close()
             

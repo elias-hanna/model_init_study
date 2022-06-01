@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import cpu_count
 from scipy.spatial import cKDTree as KDTree
-
+import random
 import time
 
 # def KLdivergence(x, y):
@@ -65,6 +65,13 @@ import time
 
 def JSdivergence(x, y):
     # Check the dimensions are consistent
+    # n_samples = 1000
+
+    # np.random.shuffle(x)
+    # np.random.shuffle(y)
+    # x = x[:n_samples]
+    # y = y[:n_samples]
+    
     x = np.atleast_2d(x)
     y = np.atleast_2d(y)
     
@@ -77,12 +84,14 @@ def JSdivergence(x, y):
     # of each point in x.
     xtree = KDTree(x)
     ytree = KDTree(y)
+    print("Constructed x and y KDTree")
     
     ### Do x || m
     # Get the first two nearest neighbours for x, since the closest one is the
     # sample itself.
     nn_x = xtree.query(x, k=2, eps=.01, p=2, workers=cpu_count()-1)
     nn_y = ytree.query(x, k=1, eps=.01, p=2, workers=cpu_count()-1)
+
     r = nn_x[0][:,1]
     s = nn_y[0]
     
@@ -102,6 +111,7 @@ def JSdivergence(x, y):
     mu = 1/2*(r+s)
 
     kl_x_m = -np.log(r/mu).sum() * d / n + np.log(m / (n - 1.))
+    print("Computed KL(x || m) estimation")
 
     ### Do y || m
     # Get the first two nearest neighbours for x, since the closest one is the
@@ -127,6 +137,7 @@ def JSdivergence(x, y):
     mu = 1/2*(r+s)
 
     kl_y_m = -np.log(s/mu).sum() * d / n + np.log(m / (n - 1.))
+    print("Computed KL(y || m) estimation")
     
     return 1/2*(kl_y_m + kl_x_m)
     
@@ -365,36 +376,48 @@ if __name__ == '__main__':
         print(f'{row_headers[cpt_tab]} ; {column_headers[1]} -> {cell_text[cpt_tab][1]}')
 
         ### PLOT JENSEN SHANNON DIVERGENCE BETWEEN NS DATA DISTRIB AND CONSIDERED INIT ###
-        min_ns = np.min(form_ns_obs, axis=0)
-        min_obs = np.min(form_obs, axis=0)
-        min_c_obs = np.min(form_c_obs, axis=0)
-        max_ns = np.max(form_ns_obs, axis=0)
-        max_obs = np.max(form_obs, axis=0)
-        max_c_obs = np.max(form_c_obs, axis=0)
 
-        g_min = np.empty((obs_dim))
-        g_max = np.empty((obs_dim))
-        for dim in range(obs_dim):
-          g_min[dim] = min(min_ns[dim], min_obs[dim], min_c_obs[dim])
-          g_max[dim] = max(max_ns[dim], max_obs[dim], max_c_obs[dim])
+        ## Normalization ? 
+        # min_ns = np.nanmin(form_ns_obs, axis=0)
+        # min_obs = np.nanmin(form_obs, axis=0)
+        # min_c_obs = np.nanmin(form_c_obs, axis=0)
+        # max_ns = np.nanmax(form_ns_obs, axis=0)
+        # max_obs = np.nanmax(form_obs, axis=0)
+        # max_c_obs = np.nanmax(form_c_obs, axis=0)
 
-        # normalize
-        n_form_ns_obs = (form_ns_obs - g_min)/(g_max - g_min)
-        n_form_obs = (form_obs - g_min)/(g_max - g_min)
-        n_form_c_obs = (form_c_obs - g_min)/(g_max - g_min)
+        # g_min = np.empty((obs_dim))
+        # g_max = np.empty((obs_dim))
+        # for dim in range(obs_dim):
+        #   g_min[dim] = min(min_ns[dim], min_obs[dim], min_c_obs[dim])
+        #   g_max[dim] = max(max_ns[dim], max_obs[dim], max_c_obs[dim])
+        #   print(g_min[dim], min_ns[dim], min_obs[dim], min_c_obs[dim])
+        #   print(g_max[dim], max_ns[dim], max_obs[dim], max_c_obs[dim])
+
+        # # normalize
+        # n_form_ns_obs = (form_ns_obs - g_min)/(g_max - g_min)
+        # n_form_obs = (form_obs - g_min)/(g_max - g_min)
+        # n_form_c_obs = (form_c_obs - g_min)/(g_max - g_min)
         
         # First init method
-        # js = JSdivergence(form_ns_obs[:, os_indexes], form_obs[:, os_indexes])
-        js = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_obs[:, os_indexes])
+        t1 = time.time()
+        js = JSdivergence(form_ns_obs[:, os_indexes], form_obs[:, os_indexes])
+        # js = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_obs[:, os_indexes])
+        t2 = time.time()
+        print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {form_obs[:, os_indexes].shape}')
+        # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {n_form_obs[:, os_indexes]}')
+        
         # Square root is the distance
         js = np.sqrt(js)
         
         cell_text_js[cpt_tab][0] = f"{js}"
 
-        import pdb; pdb.set_trace()
         # Second init method
-        # js_c = JSdivergence(form_ns_obs[:, os_indexes], form_c_obs[:, os_indexes])
-        js_c = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_c_obs[:, os_indexes])
+        t1 = time.time()
+        js_c = JSdivergence(form_ns_obs[:, os_indexes], form_c_obs[:, os_indexes])
+        # js_c = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_c_obs[:, os_indexes])
+        t2 = time.time()
+        print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {form_c_obs[:, os_indexes].shape}')
+        # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {n_form_c_obs[:, os_indexes]}')
         # Square root is the distance
         js_c = np.sqrt(js_c)
         

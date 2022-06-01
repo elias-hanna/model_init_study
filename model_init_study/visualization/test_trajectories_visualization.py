@@ -154,6 +154,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         run_name = f'{env_name}_{init_name}_{num_episodes}'
         fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
         os.makedirs(fig_path, exist_ok=True)
+
+        print(f'Current working dir: {os.getcwd()}')
+        print(f'Test trajectories vis dumping figs on {fig_path}')
         
         ## Compute mean and stddev of trajs disagreement
         mean_disagr = np.nanmean(disagrs, axis=0)
