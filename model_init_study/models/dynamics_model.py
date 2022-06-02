@@ -166,15 +166,17 @@ class DynamicsModel():
                                                        # epochs_since_last_update=10,
                                                        use_unique_transitions=self._train_unique_trans)
         self._dynamics_model_trainer.end_epoch(0) ## weird idk why they did it that way
+
+        stats = self._dynamics_model_trainer.get_diagnostics()
         if verbose:
             print("=========================================\nDynamics Model Trainer statistics:")
-            stats = self._dynamics_model_trainer.get_diagnostics()
             for name, value in zip(stats.keys(), stats.values()):
                 print(name, ": ", value)
             model_train_time = time.time() - start
             print(f"Model train time: {model_train_time} seconds")
             print("=========================================\n")
-
+            return stats
+        
     def add_samples_from_transitions(self, transitions):
         A = []
         S = []

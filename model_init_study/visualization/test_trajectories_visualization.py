@@ -57,8 +57,11 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         prediction_errors_list = []
 
         pred_trajs = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
+        pred_trajs[:] = np.nan
         disagrs = np.empty((len(self.test_trajectories), self.env_max_h))
+        disagrs[:] = np.nan
         pred_errors = np.empty((len(self.test_trajectories), self.env_max_h))
+        pred_errors[:] = np.nan
         
         A = np.empty((len(self.test_trajectories), self._action_dim))
         S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -71,14 +74,23 @@ class TestTrajectoriesVisualization(VisualizationMethod):
             ## Init starting state
             S[i,:] = self.test_trajectories[i,0,:]
 
-        has_nan = [False for _ in range(len(self.test_trajectories))]
+        ended = [False] * len(self.test_trajectories)
+
         for i in range(self.env_max_h):
             for j in range(len(self.test_trajectories)):
                 A[j,:] = controller_list[j](S[j,:])
+                if np.isnan(self.test_trajectories[j,i,:]).any():
+                    ended[j] = True
+
+            if all(ended):
+                break
+            
             batch_pred_delta_ns, batch_disagreement = self.model.forward_multiple(A, S,
                                                                                   mean=True,
                                                                                   disagr=True)
             for j in range(len(self.test_trajectories)):
+                if ended[j]:
+                    continue
                 ## Compute mean prediction from model samples
                 next_step_pred = batch_pred_delta_ns[j]
                 mean_pred = [np.mean(next_step_pred[:,k]) for k in range(len(next_step_pred[0]))]
@@ -87,9 +99,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 # pred_trajs[j,i,:] = mean_pred.copy()
                 disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
-                if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
-                    has_nan[j] = True
-                    pred_errors[j, i] = np.nan
+                # if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
+                    # has_nan[j] = True
+                    # pred_errors[j, i] = np.nan
                 # if pred_errors[j, i] > 20:
                     # pred_errors[j, i] = 20
         return pred_trajs, disagrs, pred_errors

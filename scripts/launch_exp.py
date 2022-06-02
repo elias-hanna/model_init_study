@@ -78,6 +78,11 @@ if __name__ == '__main__':
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+    if args.environment == 'redundant_arm_no_walls':
+        env_register_id = 'RedundantArmPosNoWalls-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
     if args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
         separator = FetchPickAndPlaceSeparator
@@ -181,7 +186,9 @@ if __name__ == '__main__':
     train_actions[:] = np.nan
 
     for i in range(params['n_init_episodes']):
-        for j in range(params['env_max_h']):
+        traj_len = params['env_max_h'] if params['env_max_h'] < len(train_transitions[i]) \
+                   else len(train_transitions[i])
+        for j in range(traj_len):
             train_actions[i, j, :] = train_transitions[i][j][0]
     # Trajectories
     train_trajectories = np.empty((params['n_init_episodes'],
@@ -190,17 +197,24 @@ if __name__ == '__main__':
     train_trajectories[:] = np.nan
 
     for i in range(params['n_init_episodes']):
-        for j in range(params['env_max_h']):
+        traj_len = params['env_max_h'] if params['env_max_h'] < len(train_transitions[i]) \
+                   else len(train_transitions[i])
+        for j in range(traj_len):
             train_trajectories[i, j, :] = train_transitions[i][j][1]
 
     ## Train the model
-    dynamics_model = DynamicsModel(params)
-    # Add data to replay buffer
-    for i in range(len(train_transitions)):
-        dynamics_model.add_samples_from_transitions(train_transitions[i])
+    trained = False
+    while not trained:
+        dynamics_model = DynamicsModel(params)
+        # Add data to replay buffer
+        for i in range(len(train_transitions)):
+            dynamics_model.add_samples_from_transitions(train_transitions[i])
 
-    # Actually train the model
-    dynamics_model.train()
+        # Actually train the model
+        stats = dynamics_model.train()
+        if stats['Model Holdout Loss'] < 0:
+            trained = True
+
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
@@ -263,7 +277,9 @@ if __name__ == '__main__':
     test_trajectories[:] = np.nan
 
     for i in range(params['n_test_episodes']):
-        for j in range(params['env_max_h']):
+        traj_len = params['env_max_h'] if params['env_max_h'] < len(test_transitions[i]) \
+                   else len(test_transitions[i])
+        for j in range(traj_len):
             test_trajectories[i, j, :] = test_transitions[i][j][1]
     # Actions
     test_actions = np.empty((params['n_test_episodes'],
@@ -272,7 +288,9 @@ if __name__ == '__main__':
     test_actions[:] = np.nan
 
     for i in range(params['n_test_episodes']):
-        for j in range(params['env_max_h']):
+        traj_len = params['env_max_h'] if params['env_max_h'] < len(test_transitions[i]) \
+                   else len(test_transitions[i])
+        for j in range(traj_len):
             test_actions[i, j, :] = test_transitions[i][j][0]
 
     ## Visualize test trajectories
@@ -324,4 +342,9 @@ if __name__ == '__main__':
              train_actions=train_actions,
              test_trajs=test_trajectories,
              test_actions=test_actions,)
+
+    print('\n###############################################################################\n')
+    print(f'Finished cleanly for {args.environment} environment with {args.init_method} init method and {args.init_episodes} episodes budget')
+    print('\n###############################################################################\n')
+    
     exit(0)

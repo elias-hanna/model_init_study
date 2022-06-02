@@ -101,8 +101,8 @@ def JSdivergence(x, y):
     # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
     # on the first term of the right hand side.
     ## quick fix to prevent infs put them at 0 so they are ignored...
-    r[r==np.inf] = 0
-    s[s==np.inf] = 0
+    # r[r==np.inf] = 0
+    # s[s==np.inf] = 0
     ## quick fix to prevent division by zero
     ## while keeping the identical samples between the two distributions
     r += 0.0000000001
@@ -127,8 +127,8 @@ def JSdivergence(x, y):
     # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
     # on the first term of the right hand side.
     ## quick fix to prevent infs put them at 0 so they are ignored...
-    r[r==np.inf] = 0
-    s[s==np.inf] = 0
+    # r[r==np.inf] = 0
+    # s[s==np.inf] = 0
     ## quick fix to prevent division by zero
     ## while keeping the identical samples between the two distributions
     r += 0.0000000001
@@ -204,6 +204,12 @@ if __name__ == '__main__':
         ss_min = -1
         ss_max = 1
         os_indexes = [20, 21] ## Outcome space is the xy end effector position
+    if args.environment == 'redundant_arm_no_walls':
+        env_register_id = 'RedundantArmPosNoWalls-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
+        os_indexes = [20, 21] ## Outcome space is the xy end effector position
     if args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
         separator = FetchPickAndPlaceSeparator
@@ -243,28 +249,31 @@ if __name__ == '__main__':
     ssr_vis = StateSpaceRepartitionVisualization(params)
 
     ## Load 10 NS (all evaluated individuals) data
-    ns_all_eval_data = np.load(f'{args.environment}_trajectories_all.npz')
-    ns_all_eval_trajs = ns_all_eval_data['trajectories']
-    # ns_all_eval_actions = ns_all_eval_data['actions']
-    ns_all_eval_params = ns_all_eval_data['params']
+#    ns_all_eval_data = np.load(f'{args.environment}_trajectories_all.npz')
+#    ns_all_eval_trajs = ns_all_eval_data['trajectories']
+#    # ns_all_eval_actions = ns_all_eval_data['actions']
+#    ns_all_eval_params = ns_all_eval_data['params']
 
     ## Format data of actions and observations
     # n_actions = ns_all_eval_actions.shape[0] * ns_all_eval_actions.shape[1]
-    n_obs = ns_all_eval_trajs.shape[0] * ns_all_eval_trajs.shape[1]
-    n_trans = ns_all_eval_trajs.shape[0] * (ns_all_eval_trajs.shape[1] - 1)
+#    n_obs = ns_all_eval_trajs.shape[0] * ns_all_eval_trajs.shape[1]
+#    n_trans = ns_all_eval_trajs.shape[0] * (ns_all_eval_trajs.shape[1] - 1)
 
     # form_ns_actions = np.empty((n_actions, act_dim)) 
-    form_ns_obs = np.empty((n_obs, obs_dim))
-    form_ns_ds = np.empty((n_trans, obs_dim))
-    curr_ptr = 0
-    curr_ds_ptr = 0
+#    form_ns_obs = np.empty((n_obs, obs_dim))
+#    form_ns_ds = np.empty((n_trans, obs_dim))
+#    curr_ptr = 0
+#    curr_ds_ptr = 0
 
-    for i in range(len(ns_all_eval_trajs)):
+#    for i in range(len(ns_all_eval_trajs)):
         # form_ns_actions[curr_ptr:curr_ptr+len(ns_all_eval_actions[i])] = ns_all_eval_actions[i]
-        form_ns_obs[curr_ptr:curr_ptr+len(ns_all_eval_trajs[i])] = ns_all_eval_trajs[i]
-        curr_ptr += len(ns_all_eval_trajs[i])
-        form_ns_ds[curr_ds_ptr:curr_ds_ptr+len(ns_all_eval_trajs[i])-1] = ns_all_eval_trajs[i][1:] - ns_all_eval_trajs[i][:-1]
-        curr_ds_ptr += len(ns_all_eval_trajs[i])-1
+#        form_ns_obs[curr_ptr:curr_ptr+len(ns_all_eval_trajs[i])] = ns_all_eval_trajs[i]
+#        curr_ptr += len(ns_all_eval_trajs[i])
+#        form_ns_ds[curr_ds_ptr:curr_ds_ptr+len(ns_all_eval_trajs[i])-1] = ns_all_eval_trajs[i][1:] - ns_all_eval_trajs[i][:-1]
+#        curr_ds_ptr += len(ns_all_eval_trajs[i])-1
+
+    ## Do some preprocessing to remove incorrect lines from NS data
+#    clean_form_ns_obs = form_ns_obs[np.isfinite(form_ns_obs).any(axis=1)]
 
     ## Plot table with delta S mean and stddev (prediction target) + delta A mean and stddev    
     column_headers = [init_method for init_method in init_methods]
@@ -342,7 +351,17 @@ if __name__ == '__main__':
                 form_c_ds[curr_ds_ptr:curr_ds_ptr+len(observations[1][i][j])-1] = observations[1][i][j][1:] - observations[1][i][j][:-1]
                 curr_ds_ptr += len(observations[0][i][j])-1
 
-        
+
+        # Do some cleaning on the trajectories data
+        form_actions = form_actions[np.isfinite(form_actions).any(axis=1)]
+        form_obs = form_obs[np.isfinite(form_obs).any(axis=1)]
+        form_ds = form_ds[np.isfinite(form_ds).any(axis=1)]
+
+        form_c_actions = form_c_actions[np.isfinite(form_c_actions).any(axis=1)]
+        form_c_obs = form_c_obs[np.isfinite(form_c_obs).any(axis=1)]
+        form_c_ds = form_c_ds[np.isfinite(form_c_ds).any(axis=1)]
+
+        # import pdb; pdb.set_trace()
         ### PLOT DATA REPARTITION HISTOGRAM ###
         ssr_vis.set_trajectories(form_actions)
         ssr_vis.set_concurrent_trajectories(form_c_actions)
@@ -397,31 +416,35 @@ if __name__ == '__main__':
         # n_form_ns_obs = (form_ns_obs - g_min)/(g_max - g_min)
         # n_form_obs = (form_obs - g_min)/(g_max - g_min)
         # n_form_c_obs = (form_c_obs - g_min)/(g_max - g_min)
-        
-        # First init method
-        t1 = time.time()
-        js = JSdivergence(form_ns_obs[:, os_indexes], form_obs[:, os_indexes])
-        # js = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_obs[:, os_indexes])
-        t2 = time.time()
-        print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {form_obs[:, os_indexes].shape}')
-        # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {n_form_obs[:, os_indexes]}')
-        
-        # Square root is the distance
-        js = np.sqrt(js)
-        
-        cell_text_js[cpt_tab][0] = f"{js}"
 
-        # Second init method
-        t1 = time.time()
-        js_c = JSdivergence(form_ns_obs[:, os_indexes], form_c_obs[:, os_indexes])
-        # js_c = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_c_obs[:, os_indexes])
-        t2 = time.time()
-        print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {form_c_obs[:, os_indexes].shape}')
-        # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {n_form_c_obs[:, os_indexes]}')
-        # Square root is the distance
-        js_c = np.sqrt(js_c)
+        ## Do some cleaning on the trajectories data
+        # clean_form_obs = form_obs[np.isfinite(form_obs).any(axis=1)]
+        # clean_form_c_obs = form_c_obs[np.isfinite(form_c_obs).any(axis=1)]
+
+        # # First init method
+        # t1 = time.time()
+        # js = JSdivergence(clean_form_ns_obs[:, os_indexes], clean_form_obs[:, os_indexes])
+        # # js = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_obs[:, os_indexes])
+        # t2 = time.time()
+        # print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {clean_form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {clean_form_obs[:, os_indexes].shape}')
+        # # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[0]} shape {n_form_obs[:, os_indexes]}')
         
-        cell_text_js[cpt_tab][1] = f"{js_c}"
+        # # Square root is the distance
+        # js = np.sqrt(js)
+        
+        # cell_text_js[cpt_tab][0] = f"{js}"
+
+        # # Second init method
+        # t1 = time.time()
+        # js_c = JSdivergence(form_ns_obs[:, os_indexes], clean_form_c_obs[:, os_indexes])
+        # # js_c = JSdivergence(n_form_ns_obs[:, os_indexes], n_form_c_obs[:, os_indexes])
+        # t2 = time.time()
+        # print(f'Took {t2-t1}s to compute JSD for {args.environment} with NS shape {clean_form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {clean_form_c_obs[:, os_indexes].shape}')
+        # # print(f'Took {t2-t1} to compute JSD for {args.environment} with NS shape {n_form_ns_obs[:, os_indexes].shape} and {init_method[1]} shape {n_form_c_obs[:, os_indexes]}')
+        # # Square root is the distance
+        # js_c = np.sqrt(js_c)
+        
+        # cell_text_js[cpt_tab][1] = f"{js_c}"
         
         cpt_tab += 1
         
@@ -462,4 +485,3 @@ if __name__ == '__main__':
     
     plt.savefig(f"{args.environment}_jensen_shannon_divergence", dpi=300, bbox_inches='tight')
 
-    # plt.show()

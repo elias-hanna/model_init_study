@@ -60,8 +60,10 @@ class NStepErrorVisualization(VisualizationMethod):
         disagreements_list = []
         prediction_errors_list = []
 
-        disagrs = np.zeros((len(self.test_trajectories), self.env_max_h))
-        pred_errors = np.zeros((len(self.test_trajectories), self.env_max_h, self._obs_dim))
+        disagrs = np.empty((len(self.test_trajectories), self.env_max_h))
+        disagrs[:] = np.nan
+        pred_errors = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
+        pred_errors[:] = np.nan
         
         A = np.empty((len(self.test_trajectories), self._action_dim))
         S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -83,11 +85,12 @@ class NStepErrorVisualization(VisualizationMethod):
             for j in range(len(self.test_trajectories)):
                 S[j,:] = self.test_trajectories[j,i,:]
                 A[j,:] = controller_list[j](S[j,:])
-                if np.isnan(S[j,:]).any():
+                if np.isnan(self.test_trajectories[j,i,:]).any():
                     ended[j] = True
 
             if all(ended):
                 break
+            
             ## This will store recursively obtained pred err and disagr for given n-steps
             cum_disagr = [0.]*len(self.test_trajectories)
             
@@ -124,11 +127,7 @@ class NStepErrorVisualization(VisualizationMethod):
                     # pred_errors[j,i,dim] = np.linalg.norm(loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim])
                     ## Keep it signed
                     pred_errors[j,i,dim] = loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim]
-                
-                # if has_nan[j] or np.isinf(pred_errors[j, i]).any() or np.isnan(pred_errors[j, i]).any():
-                    # has_nan[j] = True
-                    # pred_errors[j, i, :] = np.nan
-
+            
         pred_trajs = self.test_trajectories
         return pred_trajs, disagrs, pred_errors
 

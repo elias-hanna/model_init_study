@@ -61,6 +61,11 @@ if __name__ == '__main__':
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+    if args.environment == 'redundant_arm_no_walls':
+        env_register_id = 'RedundantArmPosNoWalls-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
     if args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
         separator = FetchPickAndPlaceSeparator

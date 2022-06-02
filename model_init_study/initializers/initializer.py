@@ -60,6 +60,8 @@ class Initializer:
             transitions.append((action, obs))
             obs, reward, done, info = env.step(action)
             cum_rew += reward
+            if done:
+                break
             # traj.append(obs)
             # actions.append(action)
         if self._is_goal_env:
