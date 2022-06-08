@@ -115,22 +115,22 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                     rect.set_height(-height)
                 
             ## Modify labels to display value range
-            # rects = ax[dim].patches
-            # rects = ax.patches
-            labels = [str(bins[i])+"-"+str(bins[i+1]) for i in range(len(bins)-1)]
+            # # rects = ax[dim].patches
+            # # rects = ax.patches
+            # labels = [str(bins[i])+"-"+str(bins[i+1]) for i in range(len(bins)-1)]
 
-            # for rect, label in zip(rects, labels):
-            for rect, loc_label in zip(patches, labels):
-                height = rect.get_height()
-                rect.set_height(height)
-                ax.text(rect.get_x() + rect.get_width() / 2, height+0.01, loc_label,
-                # ax[dim].text(rect.get_x() + rect.get_width() / 2, height+0.01, label,
-                        ha='center', va='bottom')
+            # # for rect, label in zip(rects, labels):
+            # for rect, loc_label in zip(patches, labels):
+            #     height = rect.get_height()
+            #     rect.set_height(height)
+            #     ax.text(rect.get_x() + rect.get_width() / 2, height+0.01, loc_label,
+            #     # ax[dim].text(rect.get_x() + rect.get_width() / 2, height+0.01, label,
+            #             ha='center', va='bottom')
 
-            plt.title(f"Repartition of {traj_type} observations in whole observation space for dimension {dim}\nmin obs={min_obs[dim]} and max obs={max_obs[dim]}")
-            plt.legend(legends)
-            plt.xlabel("Min-max normalized value of observation for data samples")
-            plt.ylabel("Number of data samples for each bin")
+            plt.title(f"Training data distribution for action dimension {dim}")
+            plt.legend(legends, prop={'size': 15})
+            plt.xlabel("Min-max normalized value of state for data samples")
+            plt.ylabel("Number of data samples per bin")
             
             if show:
                 plt.show()

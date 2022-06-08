@@ -208,6 +208,12 @@ if __name__ == '__main__':
     norm = matplotlib.colors.Normalize(vmin=0, vmax=n_init_method*n_init_episodes+1)
 
     colors = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    ## Linestyles for plots
+
+    linestyles = ['-', '--', ':', '-.',
+                  (0, (5, 10)), (0, (5, 1)), (0, (3, 10, 1, 10)), (0, (3, 1, 1, 1))]
+    
     ## Create a numpy array to store the mean and stddev of predicition errors for each method
     ## and ways of predicting
     # pred_steps = [1, 5, 10, 20, max_step]
@@ -738,6 +744,7 @@ if __name__ == '__main__':
                                 color=colors.to_rgba(i*n_init_episodes + j),
                                 # color=colors(i*n_init_episodes + j),
                                 # color=colors[i*n_init_episodes + j],
+                                linestyle=linestyles[i*n_init_episodes + j],
                                 label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(test_mean_pred_error) < test_limits_pred_error[2]:
@@ -749,6 +756,7 @@ if __name__ == '__main__':
                                     color=colors.to_rgba(i*n_init_episodes + j),
                                     # color=colors(i*n_init_episodes + j),
                                     # color=colors[i*n_init_episodes + j],
+                                    linestyle=linestyles[i*n_init_episodes + j],
                                     label=f'{init_method}_{init_episode}')
 
             sorted_idxs = test_mean_disagr.argsort()
@@ -757,6 +765,7 @@ if __name__ == '__main__':
                                      color=colors.to_rgba(i*n_init_episodes + j),
                                      # color=colors(i*n_init_episodes + j),
                                      # color=colors[i*n_init_episodes + j],
+                                     linestyle=linestyles[i*n_init_episodes + j],
                                      label=f'{init_method}_{init_episode}')
             ## On example trajs
             ## Compute mean and stddev of trajs disagreement
@@ -776,6 +785,7 @@ if __name__ == '__main__':
                                    color=colors.to_rgba(i*n_init_episodes + j),
                                    # color=colors(i*n_init_episodes + j),
                                    # color=colors[i*n_init_episodes + j],
+                                   linestyle=linestyles[i*n_init_episodes + j],
                                    label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
@@ -787,6 +797,7 @@ if __name__ == '__main__':
                                        color=colors.to_rgba(i*n_init_episodes + j),
                                        # color=colors(i*n_init_episodes + j),
                                        # color=colors[i*n_init_episodes + j],
+                                       linestyle=linestyles[i*n_init_episodes + j],
                                        label=f'{init_method}_{init_episode}')
 
             sorted_idxs = example_mean_disagr.argsort()
@@ -795,6 +806,7 @@ if __name__ == '__main__':
                                         color=colors.to_rgba(i*n_init_episodes + j),
                                         # color=colors(i*n_init_episodes + j),
                                         # color=colors[i*n_init_episodes + j],
+                                        linestyle=linestyles[i*n_init_episodes + j],
                                         label=f'{init_method}_{init_episode}')
 
             print(f"\nPlotted for init_method {init_method} and init_episode {init_episode}\n")

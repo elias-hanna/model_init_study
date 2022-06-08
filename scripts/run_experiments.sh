@@ -18,28 +18,27 @@
 # disagr_plot_upper_limits=(1 0.3) # warning needs to be in same order as envs
 
 
-# environments=(redundant_arm redundant_arm_no_walls)
-# pred_error_plot_upper_limits=(1.25 1.25) # warning needs to be in same order as envs
-# disagr_plot_upper_limits=(1.25 1.25) # warning needs to be in same order as envs
+# environments=(ball_in_cup redundant_arm redundant_arm_no_walls)
+# pred_error_plot_upper_limits=(5 1.25 1.25) # warning needs to be in same order as envs
+# disagr_plot_upper_limits=(1 1.25 1.25) # warning needs to be in same order as envs
 
 # environments=(redundant_arm)
 # pred_error_plot_upper_limits=(1.25) # warning needs to be in same order as envs
 # disagr_plot_upper_limits=(1.25) # warning needs to be in same order as envs
 
-environments=(redundant_arm_no_walls)
-pred_error_plot_upper_limits=(1.25) # warning needs to be in same order as envs
-disagr_plot_upper_limits=(1.25) # warning needs to be in same order as envs
+# environments=(redundant_arm_no_walls_no_collision)
+# pred_error_plot_upper_limits=(1.25) # warning needs to be in same order as envs
+# disagr_plot_upper_limits=(1.25) # warning needs to be in same order as envs
 
 # environments=(fetch_pick_and_place)
 # pred_error_plot_upper_limits=(2.5) # warning needs to be in same order as envs
 # disagr_plot_upper_limits=(0.3) # warning needs to be in same order as envs
 
-# environments=(ball_in_cup) # fetch_pick_and_place)
-# pred_error_plot_upper_limits=(5 2.5) # warning needs to be in same order as envs
-# disagr_plot_upper_limits=(1 0.3) # warning needs to be in same order as envs
+environments=(ball_in_cup)
+pred_error_plot_upper_limits=(5) # warning needs to be in same order as envs
+disagr_plot_upper_limits=(1) # warning needs to be in same order as envs
 
 reps=(0 1 2 3 4 5 6 7 8 9)
-# reps=(3)
 episodes=(5 10 15 20)
 methods=(random-policies random-actions)
 
@@ -50,16 +49,16 @@ methods=(random-policies random-actions)
 # 	    mkdir $rep
 # 	    cd $rep
 # 	    for method in "${methods[@]}"; do
-#	        for ep in "${episodes[@]}"; do
-#		        python ../../../scripts/launch_exp.py --init-method $method --init-episodes $ep --environment $env --dump-path .
-#	        done
-#	    done
-#	    cd ..
-#    done
-#    cd ..	
-# done
+# 	        for ep in "${episodes[@]}"; do
+# 		        python ../../../scripts/launch_exp.py --init-method $method --init-episodes $ep --environment $env --dump-path .
+# 	        done
+# 	    done
+# 	    cd ..
+#     done
+#     cd ..	
+#  done
 
-# wait
+#  wait
 
 # ## Plot means over replications
 
