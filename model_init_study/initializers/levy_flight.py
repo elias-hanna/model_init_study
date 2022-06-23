@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy.stats import levy
 
-class BrownianMotion(FormalizedInitializer):
+class LevyFlight(FormalizedInitializer):
     def __init__(self, params):
         ## Call super init
         super().__init__(params)

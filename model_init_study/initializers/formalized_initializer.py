@@ -27,6 +27,7 @@ class FormalizedInitializer(Initializer):
             for t in range(self._env_max_h):
                 action = sum(loc_alpha_z[:t])
                 loc_actions.append(action)
+            loc_actions = np.clip(loc_actions, params['action_min'], params['action_max'])
             self.actions.append(loc_actions)
 
     def _get_action(self, idx, obs, t):

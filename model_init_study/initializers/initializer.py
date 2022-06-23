@@ -17,6 +17,7 @@ class Initializer:
         """
         self._action_min = params['action_min']
         self._action_max = params['action_max']
+        self._action_init = params['action_init']
         self._n_init_episodes = params['n_init_episodes']
         self._n_test_episodes = params['n_test_episodes']
         self._env_max_h = params['env_max_h']
