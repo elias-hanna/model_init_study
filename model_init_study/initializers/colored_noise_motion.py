@@ -1,22 +1,20 @@
-from model_init_study.initializers.initializer import Initializer
+## Local Imports 
+from model_init_study.initializers.formalized_initializer import FormalizedInitializer
 
+## Utils imports
 import numpy as np
-
 import colorednoise
 
-class ColoredNoiseMotion(Initializer):
+class ColoredNoiseMotion(FormalizedInitializer):
     def __init__(self, params):
+        self.noise_beta = params['noise_beta']
         ## Call super init
         super().__init__(params)
-        self.noise_beta = params['noise_beta']
-
+        
     def _alpha(self, i, t):
         return 1
 
-    def get_alpha(self, i, t):
-        return self._alpha
-
-    def get_z(self, i, t):
+    def get_z(self):
         """
         :param num_traj: number of trajectories
         :param obs: current observation
@@ -28,12 +26,13 @@ class ColoredNoiseMotion(Initializer):
             # Important improvement
             # self.mean has shape h,d: we need to swap d and h because temporal correlations are in last axis)
             # noinspection PyUnresolvedReferences
-            samples = colorednoise.powerlaw_psd_gaussian(self.noise_beta,
-                                                         size=(self._env_max_h,
-                                                               self._act_dim)).transpose(
+            samples = colorednoise.powerlaw_psd_gaussian(self.noise_beta, #10)
+                                                         size=(self._act_dim,
+                                                               self._env_max_h)).transpose(
                                                                    [1, 0])
         else:
             samples = np.random.randn(self._env_max_h, self._act_dim)
-        
-        samples = np.clip(samples + self._action_init, self.env.action_space.low, self.env.action_space.high)
+
+        # samples = samples*0.5
+        # samples = np.clip(samples + self._action_init, self._env.action_space.low, self._env.action_space.high)
         return samples
