@@ -40,3 +40,8 @@ class FormalizedInitializer(Initializer):
     @abstractmethod
     def get_alpha(self, i, t):
         raise NotImplementedError
+
+
+## Code test and plot for random walks
+if __name__ == '__main__':
+    
