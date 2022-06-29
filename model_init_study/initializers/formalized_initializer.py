@@ -25,8 +25,9 @@ class FormalizedInitializer(Initializer):
             self.z = np.clip(self.z, params['action_min'], params['action_max'])
             loc_actions = []
             for t in range(self._env_max_h):
-                loc_alpha_z = [self.alpha[i,t]*self.z[i] for i in range(self._env_max_h)]
-                action = sum(loc_alpha_z[:t])
+                loc_alpha_z = [self._action_init + self.alpha[i,t]*self.z[i]
+                               for i in range(self._env_max_h)]
+                action = sum(loc_alpha_z[:t+1])
                 loc_actions.append(action)
             loc_actions = np.clip(loc_actions, params['action_min'], params['action_max'])
             self.actions.append(loc_actions)

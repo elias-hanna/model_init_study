@@ -10,7 +10,13 @@ if __name__ == '__main__':
         import RandomPolicyInitializer
     from model_init_study.initializers.random_actions_initializer \
         import RandomActionsInitializer
-
+    from model_init_study.initializers.brownian_motion \
+        import BrownianMotion
+    from model_init_study.initializers.levy_flight \
+        import LevyFlight
+    from model_init_study.initializers.colored_noise_motion \
+        import ColoredNoiseMotion
+    
     # from model_init_study.visualization.discretized_state_space_visualization \
         # import DiscretizedStateSpaceVisualization
     from model_init_study.visualization.state_space_repartition_visualization \
@@ -40,6 +46,7 @@ if __name__ == '__main__':
     import argparse
     import os
     import model_init_study
+
     module_path = os.path.dirname(model_init_study.__file__)
     
     parser = argparse.ArgumentParser(description='Process run parameters.')
@@ -59,47 +66,72 @@ if __name__ == '__main__':
     dynamics_model = DynamicsModel
     
     ## Framework methods
- 
+    noise_beta = 2
     if args.init_method == 'random-policies':
         Initializer = RandomPolicyInitializer
     elif args.init_method == 'random-actions':
         Initializer = RandomActionsInitializer
+    elif args.init_method == 'brownian-motion':
+        Initializer = BrownianMotion
+    elif args.init_method == 'levy-flight':
+        Initializer = LevyFlight
+    elif args.init_method == 'colored-noise-beta-1':
+        Initializer = ColoredNoiseMotion
+        noise_beta = 1
+    elif args.init_method == 'colored-noise-beta-2':
+        Initializer = ColoredNoiseMotion
+        noise_beta = 2
     else:
         raise Exception(f"Warning {args.init_method} isn't a valid initializer")
 
     env_register_id = 'BallInCup3d-v0'
+    gym_args = {}
     if args.environment == 'ball_in_cup':
         env_register_id = 'BallInCup3d-v0'
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
-    if args.environment == 'redundant_arm':
-        env_register_id = 'RedundantArmPos-v0'
-        separator = RedundantArmSeparator
+    if args.environment == 'redundant_arm_no_walls_limited_angles':
+        env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
         ss_min = -1
         ss_max = 1
-    if args.environment == 'redundant_arm_no_walls':
-        env_register_id = 'RedundantArmPosNoWalls-v0'
-        separator = RedundantArmSeparator
-        ss_min = -1
-        ss_max = 1
-    if args.environment == 'redundant_arm_no_walls_no_collision':
-        env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
-        separator = RedundantArmSeparator
-        ss_min = -1
-        ss_max = 1
-    if args.environment == 'fetch_pick_and_place':
-        env_register_id = 'FetchPickAndPlaceDeterministic-v1'
-        separator = FetchPickAndPlaceSeparator
-        ss_min = -1
-        ss_max = 1
-    if args.environment == 'ant':
-        env_register_id = 'AntBulletEnvDeterministicPos-v0'
-        separator = AntSeparator
+    if args.environment == 'fastsim_maze':
+        env_register_id = 'FastsimSimpleNavigationPos-v0'
         ss_min = -10
         ss_max = 10
+    if args.environment == 'fastsim_maze_traps':
+        env_register_id = 'FastsimSimpleNavigationPos-v0'
+        ss_min = -10
+        ss_max = 10
+        gym_args['physical_traps'] = True
         
-    env = gym.make(env_register_id)
+    # if args.environment == 'redundant_arm':
+    #     env_register_id = 'RedundantArmPos-v0'
+    #     separator = RedundantArmSeparator
+    #     ss_min = -1
+    #     ss_max = 1
+    # if args.environment == 'redundant_arm_no_walls':
+    #     env_register_id = 'RedundantArmPosNoWalls-v0'
+    #     separator = RedundantArmSeparator
+    #     ss_min = -1
+    #     ss_max = 1
+    # if args.environment == 'redundant_arm_no_walls_no_collision':
+    #     env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
+    #     separator = RedundantArmSeparator
+    #     ss_min = -1
+    #     ss_max = 1
+    # if args.environment == 'fetch_pick_and_place':
+    #     env_register_id = 'FetchPickAndPlaceDeterministic-v1'
+    #     separator = FetchPickAndPlaceSeparator
+    #     ss_min = -1
+    #     ss_max = 1
+    # if args.environment == 'ant':
+    #     env_register_id = 'AntBulletEnvDeterministicPos-v0'
+    #     separator = AntSeparator
+    #     ss_min = -10
+    #     ss_max = 10
+        
+    env = gym.make(env_register_id, **gym_args)
 
     try:
         max_step = env._max_episode_steps
@@ -157,6 +189,12 @@ if __name__ == '__main__':
 
         'action_min': -1,
         'action_max': 1,
+        'action_init': 0,
+
+        ## Random walks parameters
+        'step_size': 0.1,
+        'noise_beta': noise_beta,
+        
         'action_lasting_steps': args.action_lasting_steps,
 
         'state_min': ss_min,
@@ -172,6 +210,10 @@ if __name__ == '__main__':
         'env': env,
         'env_max_h': max_step,
     }
+    
+    work_dir = os.getcwd()
+    dump_dir = os.path.join(work_dir, args.dump_path)
+    os.makedirs(dump_dir, exist_ok=True)
     
     ## Instanciate the initializer
     initializer = Initializer(params)
@@ -220,6 +262,15 @@ if __name__ == '__main__':
         if stats['Model Holdout Loss'] < 0:
             trained = True
 
+    # work_dir = os.getcwd()
+    # dump_dir = os.path.join(work_dir, args.dump_path)
+    wnb_path = os.path.join(dump_dir, f'{args.environment}_{args.init_method}_{args.init_episodes}_model_wnb.pt')
+    dynamics_model.save(wnb_path)
+
+    ## Just for test
+    # dynamics_model = DynamicsModel(params)
+    # dynamics_model.load(wnb_path)
+    
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)

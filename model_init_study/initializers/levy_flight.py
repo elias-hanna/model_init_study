@@ -16,6 +16,6 @@ class LevyFlight(FormalizedInitializer):
         return 1
 
     def get_z(self):
-        levy_samples = levy.rvs(scale=self.c, size=self._env_max_h)
+        levy_samples = levy.rvs(scale=self.c, size=(self._env_max_h, self._act_dim))
         levy_samples = [each*random.choice([-1,1]) for each in levy_samples]
         return levy_samples

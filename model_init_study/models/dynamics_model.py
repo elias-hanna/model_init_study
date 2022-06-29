@@ -198,3 +198,10 @@ class DynamicsModel():
     
     def rescale_standard(self, vector, mean_vector, std_vector):
         return [vector[i]*std_vector[i] + mean_vector[i] for i in range(len(vector))]
+
+    def save(self, path):
+        torch.save(self._dynamics_model.state_dict(), path)
+
+    def load(self, path):
+        self._dynamics_model.load_state_dict(torch.load(path))
+        self._dynamics_model.eval()

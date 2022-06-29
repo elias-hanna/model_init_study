@@ -15,4 +15,4 @@ class BrownianMotion(FormalizedInitializer):
     def get_z(self):
         return np.random.uniform(low=-self.step_size,
                                  high=self.step_size,
-                                 size=self._env_max_h)
+                                 size=(self._env_max_h, self._act_dim))
