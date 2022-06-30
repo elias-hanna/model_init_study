@@ -34,6 +34,8 @@ if __name__ == '__main__':
         import BallInCupSeparator
     from model_init_study.visualization.redundant_arm_separator \
         import RedundantArmSeparator
+    from model_init_study.visualization.fastsim_separator \
+        import FastsimSeparator
     
     # Env imports
     import gym
@@ -91,20 +93,25 @@ if __name__ == '__main__':
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
-    if args.environment == 'redundant_arm_no_walls_limited_angles':
+    elif args.environment == 'redundant_arm_no_walls_limited_angles':
         env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
+        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
-    if args.environment == 'fastsim_maze':
+    elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
+        separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
-    if args.environment == 'fastsim_maze_traps':
+    elif args.environment == 'fastsim_maze_traps':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
+        separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
-        
+    else:
+        raise ValueError(f"{args.environment} is not a defined environment")
+    
     # if args.environment == 'redundant_arm':
     #     env_register_id = 'RedundantArmPos-v0'
     #     separator = RedundantArmSeparator
@@ -152,7 +159,7 @@ if __name__ == '__main__':
     else:
         obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
-
+    
     controller_params = \
     {
         'controller_input_dim': obs_dim,

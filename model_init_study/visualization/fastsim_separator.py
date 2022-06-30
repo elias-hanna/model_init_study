@@ -2,7 +2,7 @@
 from model_init_study.visualization.traj_separators import TrajectorySeparator
 
 # class RedundantArmSeparator(traj_separators.TrajectorySeparator):
-class RedundantArmSeparator(TrajectorySeparator):
+class FastsimSeparator(TrajectorySeparator):
     def __init__(self):
         pass
 
@@ -12,7 +12,7 @@ class RedundantArmSeparator(TrajectorySeparator):
         note: same size for all elements
         [size_1, size_2, ..., size_n]
         """
-        return [20, 2]
+        return [2, 2, 2]
         
     def get_labels(self):
         """
@@ -20,4 +20,4 @@ class RedundantArmSeparator(TrajectorySeparator):
         note: same labels for all elements
         [label_1, label_2, ..., label_n]
         """
-        return ['articulations_angles', 'end_eff_pos']
+        return ['robot_pos', 'robot_vel', 'angle']
