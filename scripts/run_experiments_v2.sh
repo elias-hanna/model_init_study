@@ -6,7 +6,7 @@
 ##################################################
 
 environments=(ball_in_cup redundant_arm_no_walls_limited_angles fastsim_maze fastsim_maze_traps)
-pred_error_plot_upper_limits=(5 5 20 20) # warning needs to be in same order as envs
+pred_error_plot_upper_limits=(5 5 50 50) # warning needs to be in same order as envs
 disagr_plot_upper_limits=(1 1 1 1) # warning needs to be in same order as envs
 
 # episodes=(5 10 15 20)
@@ -52,22 +52,24 @@ methods=(brownian-motion levy-flight colored-noise-beta-1 colored-noise-beta-2 r
 
 # wait
 
-## Plot means (only means) over replications on same plot
-cpt=0
-for env in "${environments[@]}"; do
-    cd ${env}_results
-    echo "Processing following folder"; pwd
-    python ../../scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
-    cd ..
-    cpt=$((cpt+1))
-done
-
-# ## Plot histogram of actions and observations repartition over replications on same plot
+# ## Plot means (only means) over replications on same plot
 # cpt=0
 # for env in "${environments[@]}"; do
 #     cd ${env}_results
 #     echo "Processing following folder"; pwd
-#     python ../../scripts/plot_hist_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path .
+#     python ../../scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
 #     cd ..
 #     cpt=$((cpt+1))
+#     echo "finished plotting pred errors for $env"
 # done
+
+## Plot histogram of actions and observations repartition over replications on same plot
+cpt=0
+for env in "${environments[@]}"; do
+    cd ${env}_results
+    echo "Processing following folder"; pwd
+    python ../../scripts/plot_hist_over_all_single.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path .
+    cd ..
+    cpt=$((cpt+1))
+    echo "finished plotting histograms for $env"
+done

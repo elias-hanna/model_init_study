@@ -15,14 +15,6 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
         
     def _process_params(self, params):
         super()._process_params(params)
-        # if 'state_min' in params:
-        #     self._state_min = params['state_min']
-        # else:
-        #     raise Exception('StateSpaceRepartitionVisualization _process_params error: state_min not in params')
-        # if 'state_max' in params:
-        #     self._state_max = params['state_max']
-        # else:
-        #     raise Exception('StateSpaceRepartitionVisualization _process_params error: state_max not in params')
         if 'obs_dim' in params:
             self._obs_dim = params['obs_dim']
         else:
@@ -34,8 +26,9 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
     def set_concurrent_trajectories(self, trajs):
         self._concurrent_trajs = trajs
         
-    def dump_plots(self, env_name, init_name, num_episodes, traj_type, itr=0, show=False,
-                   spe_fig_path=None, label='', use_concurrent_trajs=False, legends=['', '']):
+    def dump_plots(self, env_name, init_name, num_episodes, traj_type, dim_type='action',
+                   itr=0, show=False, spe_fig_path=None, label='', use_concurrent_trajs=False,
+                   legends=['', '']):
         if self._trajs is None:
             raise Exception('StateSpaceRepartitionVisualization dump_plots error: _trajs not set')
         if use_concurrent_trajs:
@@ -88,9 +81,6 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                          (max_obs - min_obs)
         
         ## Create fig and ax
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # fig, ax = plt.subplots(self._obs_dim)#, 1, figsize=(20, 70), facecolor='white', edgecolor='white')
         bins = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
 
         for dim in range(self._trajs.shape[1]):
@@ -114,20 +104,7 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                     height = rect.get_height()
                     rect.set_height(-height)
                 
-            ## Modify labels to display value range
-            # # rects = ax[dim].patches
-            # # rects = ax.patches
-            # labels = [str(bins[i])+"-"+str(bins[i+1]) for i in range(len(bins)-1)]
-
-            # # for rect, label in zip(rects, labels):
-            # for rect, loc_label in zip(patches, labels):
-            #     height = rect.get_height()
-            #     rect.set_height(height)
-            #     ax.text(rect.get_x() + rect.get_width() / 2, height+0.01, loc_label,
-            #     # ax[dim].text(rect.get_x() + rect.get_width() / 2, height+0.01, label,
-            #             ha='center', va='bottom')
-
-            plt.title(f"Training data distribution for action dimension {dim}")
+            plt.title(f"Training data distribution for {dim_type} dimension {dim}")
             plt.legend(legends, prop={'size': 15})
             plt.xlabel("Min-max normalized value of state for data samples")
             plt.ylabel("Number of data samples per bin")
