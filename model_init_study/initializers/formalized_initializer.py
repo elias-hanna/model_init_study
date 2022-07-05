@@ -142,23 +142,23 @@ if __name__ == '__main__':
 
     ###### Simple test of each random walk ######
     
-    # ## Brownian Motion
-    # bm = BrownianMotion(params)
+    ## Brownian Motion
+    bm = BrownianMotion(params)
 
-    # plt.figure()
+    plt.figure()
 
-    # plt.plot(range(max_step), bm.actions[0])
+    plt.plot(range(max_step), bm.actions[0])
 
-    # plt.title('Action value across time for Brownian Motion')
+    plt.title('Action value across time for Brownian Motion')
 
-    # ## Levy Flight
-    # lf = LevyFlight(params)
+    ## Levy Flight
+    lf = LevyFlight(params)
 
-    # plt.figure()
+    plt.figure()
 
-    # plt.plot(range(max_step), lf.actions[0])
+    plt.plot(range(max_step), lf.actions[0])
 
-    # plt.title('Action value across time for Levy Flight')
+    plt.title('Action value across time for Levy Flight')
 
     # ## Colored Noise motion
     # cnm = ColoredNoiseMotion(params)
@@ -177,38 +177,82 @@ if __name__ == '__main__':
 
     # plt.show()
 
-    ###### Plot mean autocorrelation over a larger number of sampled sequences ######
+    ###### Plot mean autocorrelation over a larger number of sampled action sequences ######
     
-    bm_acf_res = np.empty((nreps, nlags))
-    lf_acf_res = np.empty((nreps, nlags))
-    cnm_acf_res = np.empty((nreps, nlags))
+    # bm_acf_res = np.empty((nreps, nlags))
+    # lf_acf_res = np.empty((nreps, nlags))
+    # cnm_acf_res = np.empty((nreps, nlags))
+    
+    # bm = BrownianMotion(params)
+    # lf = LevyFlight(params)
+    # # cnm = ColoredNoiseMotion(params)
+
+    # for i in range(nreps):
+
+    #     bm_acf_res[i] = acf(bm.actions[i], nlags=nlags)
+    #     lf_acf_res[i] = acf(lf.actions[i], nlags=nlags)
+    #     # cnm_acf_res[i] = acf(cnm.actions[i], nlags=nlags)
+
+    # plt.figure()
+
+    # plt.plot(range(1, nlags+1), np.nanmean(bm_acf_res, axis=0))
+
+    # plt.title('Correlogram for Brownian Motion')
+
+    # plt.figure()
+
+    # plt.plot(range(1, nlags+1), np.nanmean(lf_acf_res, axis=0))
+
+    # plt.title('Correlogram for Levy Flight')
+
+    # # plt.figure()
+
+    # # plt.plot(range(1, nlags+1), np.nanmean(cnm_acf_res, axis=0))
+
+    # # plt.title('Correlogram for Colored Noise Motion')
+
+    # plt.show()
+
+    ###### Plot mean autocorrelation over a larger number of sampled noise sequences ######
+
+    params['n_init_episodes'] = 1
+    params['action_dim'] = nreps
+    
+    bm_acf_res = np.empty((nreps, nlags+1))
+    lf_acf_res = np.empty((nreps, nlags+1))
+    cnm_acf_res = np.empty((nreps, nlags+1))
     
     bm = BrownianMotion(params)
     lf = LevyFlight(params)
     cnm = ColoredNoiseMotion(params)
 
+    bm_noise = bm.get_z()
+    lf_noise = lf.get_z()
+    cnm_noise = cnm.get_z()
+
+    import pdb; pdb.set_trace()
     for i in range(nreps):
 
-        bm_acf_res[i] = acf(bm.actions[i])
-        lf_acf_res[i] = acf(lf.actions[i])
-        cnm_acf_res[i] = acf(cnm.actions[i])
+        bm_acf_res[i] = acf(bm_noise[i], nlags=nlags)
+        lf_acf_res[i] = acf(lf_noise[i], nlags=nlags)
+        cnm_acf_res[i] = acf(cnm_noise[i], nlags=nlags)
+        
+    plt.figure()
+
+    plt.plot(range(1, nlags+1), np.nanmean(bm_acf_res, axis=0))
+
+    plt.title('Correlogram for White Noise')
 
     plt.figure()
 
-    plt.plot(range(nlags), np.nanmean(bm_acf_res, axis=0))
+    plt.plot(range(1, nlags+1), np.nanmean(lf_acf_res, axis=0))
 
-    plt.title('Correlogram for Brownian Motion')
-
-    plt.figure()
-
-    plt.plot(range(nlags), np.nanmean(lf_acf_res, axis=0))
-
-    plt.title('Correlogram for Levy Flight')
+    plt.title('Correlogram for Levy Distribution Noise')
 
     plt.figure()
 
-    plt.plot(range(nlags), np.nanmean(cnm_acf_res, axis=0))
+    plt.plot(range(1, nlags+1), np.nanmean(cnm_acf_res, axis=0))
 
-    plt.title('Correlogram for Colored Noise Motion')
+    plt.title('Correlogram for Colored Noise')
 
     plt.show()

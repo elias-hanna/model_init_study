@@ -9,7 +9,7 @@ import random
 class LevyFlight(FormalizedInitializer):
     def __init__(self, params):
         ## Call super init
-        self.c = 1/2
+        self.c = 1/96
         super().__init__(params)
         
     def _alpha(self, i, t):
