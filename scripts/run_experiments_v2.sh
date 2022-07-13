@@ -6,14 +6,14 @@
 ##################################################
 
 environments=(ball_in_cup redundant_arm_no_walls_limited_angles fastsim_maze fastsim_maze_traps)
-pred_error_plot_upper_limits=(5 5 50 50) # warning needs to be in same order as envs
-disagr_plot_upper_limits=(1 1 1 1) # warning needs to be in same order as envs
+pred_error_plot_upper_limits=(5 5 100 100) # warning needs to be in same order as envs
+disagr_plot_upper_limits=(1 1 5 5) # warning needs to be in same order as envs
 
 # episodes=(5 10 15 20)
 # methods=(random-policies random-actions)
 # episodes=(5 10 20)
 episodes=(5 10 20)
-methods=(brownian-motion levy-flight colored-noise-beta-1 colored-noise-beta-2 random-actions)
+methods=(brownian-motion levy-flight colored-noise-beta-1 colored-noise-beta-2 random-actions random-policies)
 
 # for env in "${environments[@]}"; do
 # 	for method in "${methods[@]}"; do
@@ -52,16 +52,16 @@ methods=(brownian-motion levy-flight colored-noise-beta-1 colored-noise-beta-2 r
 
 # wait
 
-# ## Plot means (only means) over replications on same plot
-# cpt=0
-# for env in "${environments[@]}"; do
-#     cd ${env}_results
-#     echo "Processing following folder"; pwd
-#     python ../../scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
-#     cd ..
-#     cpt=$((cpt+1))
-#     echo "finished plotting pred errors for $env"
-# done
+## Plot means (only means) over replications on same plot
+cpt=0
+for env in "${environments[@]}"; do
+    cd ${env}_results
+    echo "Processing following folder"; pwd
+    python ../../scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
+    cd ..
+    cpt=$((cpt+1))
+    echo "finished plotting pred errors for $env"
+done
 
 ## Plot histogram of actions and observations repartition over replications on same plot
 cpt=0

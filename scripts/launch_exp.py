@@ -10,6 +10,8 @@ if __name__ == '__main__':
         import RandomPolicyInitializer
     from model_init_study.initializers.random_actions_initializer \
         import RandomActionsInitializer
+    from model_init_study.initializers.random_actions_random_policies_hybrid_initializer \
+        import RARPHybridInitializer
     from model_init_study.initializers.brownian_motion \
         import BrownianMotion
     from model_init_study.initializers.levy_flight \
@@ -73,6 +75,8 @@ if __name__ == '__main__':
         Initializer = RandomPolicyInitializer
     elif args.init_method == 'random-actions':
         Initializer = RandomActionsInitializer
+    elif args.init_method == 'rarph':
+        Initializer = RARPHybridInitializer
     elif args.init_method == 'brownian-motion':
         Initializer = BrownianMotion
     elif args.init_method == 'levy-flight':
@@ -93,6 +97,21 @@ if __name__ == '__main__':
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
+    elif args.environment == 'redundant_arm':
+        env_register_id = 'RedundantArmPos-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
+    elif args.environment == 'redundant_arm_no_walls':
+        env_register_id = 'RedundantArmPosNoWalls-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
+    elif args.environment == 'redundant_arm_no_walls_no_collision':
+        env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
     elif args.environment == 'redundant_arm_no_walls_limited_angles':
         env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
         separator = RedundantArmSeparator
@@ -112,21 +131,7 @@ if __name__ == '__main__':
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
     
-    # if args.environment == 'redundant_arm':
-    #     env_register_id = 'RedundantArmPos-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'redundant_arm_no_walls':
-    #     env_register_id = 'RedundantArmPosNoWalls-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'redundant_arm_no_walls_no_collision':
-    #     env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
+    
     # if args.environment == 'fetch_pick_and_place':
     #     env_register_id = 'FetchPickAndPlaceDeterministic-v1'
     #     separator = FetchPickAndPlaceSeparator
@@ -293,13 +298,13 @@ if __name__ == '__main__':
     # discretized_ss_visualizer = DiscretizedStateSpaceVisualization(params)
     ## Visualize n step error and disagreement ###
 
-    n_step_visualizer.set_n(1)
+    # n_step_visualizer.set_n(1)
     
-    examples_1_step_trajs, examples_1_step_disagrs, examples_1_step_pred_errors = n_step_visualizer.dump_plots(
-        args.environment,
-        args.init_method,
-        args.init_episodes,
-        'examples', dump_separate=True, no_sep=True)
+    # examples_1_step_trajs, examples_1_step_disagrs, examples_1_step_pred_errors = n_step_visualizer.dump_plots(
+    #     args.environment,
+    #     args.init_method,
+    #     args.init_episodes,
+    #     'examples', dump_separate=True, no_sep=True)
 
     # n_step_visualizer.set_n(5)
 
@@ -317,13 +322,13 @@ if __name__ == '__main__':
     #     args.init_episodes,
     #     'examples', dump_separate=True, no_sep=True)
 
-    n_step_visualizer.set_n(20)
+    # n_step_visualizer.set_n(20)
     
-    examples_20_step_trajs, examples_20_step_disagrs, examples_20_step_pred_errors = n_step_visualizer.dump_plots(
-        args.environment,
-        args.init_method,
-        args.init_episodes,
-        'examples', dump_separate=True, no_sep=True)
+    # examples_20_step_trajs, examples_20_step_disagrs, examples_20_step_pred_errors = n_step_visualizer.dump_plots(
+    #     args.environment,
+    #     args.init_method,
+    #     args.init_episodes,
+    #     'examples', dump_separate=True, no_sep=True)
 
     ### Full recursive prediction visualizations ###
     examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
@@ -389,18 +394,18 @@ if __name__ == '__main__':
              # test_n_step_trajs=test_n_step_trajs,
              # test_n_step_disagrs=test_n_step_disagrs,
              # test_n_step_pred_errors=test_n_step_pred_errors,
-             examples_1_step_trajs=examples_1_step_trajs,
-             examples_1_step_disagrs=examples_1_step_disagrs,
-             examples_1_step_pred_errors=examples_1_step_pred_errors,
+             # examples_1_step_trajs=examples_1_step_trajs,
+             # examples_1_step_disagrs=examples_1_step_disagrs,
+             # examples_1_step_pred_errors=examples_1_step_pred_errors,
              # examples_5_step_trajs=examples_5_step_trajs,
              # examples_5_step_disagrs=examples_5_step_disagrs,
              # examples_5_step_pred_errors=examples_5_step_pred_errors,
              # examples_10_step_trajs=examples_10_step_trajs,
              # examples_10_step_disagrs=examples_10_step_disagrs,
              # examples_10_step_pred_errors=examples_10_step_pred_errors,
-             examples_20_step_trajs=examples_20_step_trajs,
-             examples_20_step_disagrs=examples_20_step_disagrs,
-             examples_20_step_pred_errors=examples_20_step_pred_errors,
+             # examples_20_step_trajs=examples_20_step_trajs,
+             # examples_20_step_disagrs=examples_20_step_disagrs,
+             # examples_20_step_pred_errors=examples_20_step_pred_errors,
              train_trajs=train_trajectories,
              train_actions=train_actions,
              test_trajs=test_trajectories,

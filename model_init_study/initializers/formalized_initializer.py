@@ -160,14 +160,14 @@ if __name__ == '__main__':
 
     plt.title('Action value across time for Levy Flight')
 
-    # ## Colored Noise motion
-    # cnm = ColoredNoiseMotion(params)
+    ## Colored Noise motion
+    cnm = ColoredNoiseMotion(params)
 
-    # plt.figure()
+    plt.figure()
 
-    # plt.plot(range(max_step), cnm.actions[0])
+    plt.plot(range(max_step), cnm.actions[0])
 
-    # plt.title('Action value across time for Colored Noise Motion')
+    plt.title('Action value across time for Colored Noise Motion')
 
     # ## Plot correlogram for each random walk
     
@@ -227,31 +227,30 @@ if __name__ == '__main__':
     cnm = ColoredNoiseMotion(params)
 
     bm_noise = bm.get_z()
-    lf_noise = lf.get_z()
+    lf_noise = np.array(lf.get_z())
     cnm_noise = cnm.get_z()
 
-    import pdb; pdb.set_trace()
     for i in range(nreps):
-
-        bm_acf_res[i] = acf(bm_noise[i], nlags=nlags)
-        lf_acf_res[i] = acf(lf_noise[i], nlags=nlags)
-        cnm_acf_res[i] = acf(cnm_noise[i], nlags=nlags)
+        print(nreps, i, len(bm_noise[:]), len(bm_noise))
+        bm_acf_res[i] = acf(bm_noise[:,i], nlags=nlags)
+        lf_acf_res[i] = acf(lf_noise[:,i], nlags=nlags)
+        cnm_acf_res[i] = acf(cnm_noise[:,i], nlags=nlags)
         
     plt.figure()
 
-    plt.plot(range(1, nlags+1), np.nanmean(bm_acf_res, axis=0))
+    plt.plot(range(nlags+1), np.nanmean(bm_acf_res, axis=0))
 
     plt.title('Correlogram for White Noise')
 
     plt.figure()
 
-    plt.plot(range(1, nlags+1), np.nanmean(lf_acf_res, axis=0))
+    plt.plot(range(nlags+1), np.nanmean(lf_acf_res, axis=0))
 
     plt.title('Correlogram for Levy Distribution Noise')
 
     plt.figure()
 
-    plt.plot(range(1, nlags+1), np.nanmean(cnm_acf_res, axis=0))
+    plt.plot(range(nlags+1), np.nanmean(cnm_acf_res, axis=0))
 
     plt.title('Correlogram for Colored Noise')
 

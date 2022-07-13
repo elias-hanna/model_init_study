@@ -31,8 +31,8 @@ class RARPHybridInitializer(Initializer):
                                                size=self._act_dim)
                 loc_actions.append(action)
             self.actions.append(loc_actions)
-
-        for _ in range((self._n_init_episodes + self._n_test_episodes)%2):
+        
+        for _ in range((self._n_init_episodes + self._n_test_episodes)//2 + (self._n_init_episodes + self._n_test_episodes)%2):
             ## Create a random policy parametrization 
             x = np.random.uniform(low=self._policy_param_init_min,
                                   high=self._policy_param_init_max,
@@ -42,10 +42,12 @@ class RARPHybridInitializer(Initializer):
             ## Set controller parameters
             controller.set_parameters(x)
             ## Add new controller to controller list
-            self.controllers.append(controller)
+            # self.controllers.append(controller)
+            self.actions.append(controller)
             
     def _get_action(self, idx, obs, t):
-        if idx <= (self._n_init_episodes + self._n_test_episodes)//2:
+        if idx < (self._n_init_episodes + self._n_test_episodes)//2:
             return self.actions[idx][t]
         else:
-            return self.controllers[idx](obs)
+            # return self.controllers[idx](obs)
+            return self.actions[idx](obs)

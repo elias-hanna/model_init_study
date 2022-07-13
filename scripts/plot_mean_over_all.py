@@ -58,48 +58,6 @@ if __name__ == '__main__':
     dynamics_model = DynamicsModel
 
     env_name = args.environment
-    # ## Framework methods
-    # env_register_id = 'BallInCup3d-v0'
-    # if args.environment == 'ball_in_cup':
-    #     env_register_id = 'BallInCup3d-v0'
-    #     separator = BallInCupSeparator
-    #     ss_min = -0.4
-    #     ss_max = 0.4
-    #     os_indexes = [0, 1, 2] ## Outcome space is the relative position of the ball to the cup
-    # if args.environment == 'redundant_arm':
-    #     env_register_id = 'RedundantArmPos-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    #     os_indexes = [20, 21] ## Outcome space is the xy end effector position
-    # if args.environment == 'redundant_arm_no_walls':
-    #     env_register_id = 'RedundantArmPosNoWalls-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    #     os_indexes = [20, 21] ## Outcome space is the xy end effector position
-    # if args.environment == 'redundant_arm_no_walls_no_collision':
-    #     env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    #     os_indexes = [20, 21] ## Outcome space is the xy end effector position
-    # if args.environment == 'fetch_pick_and_place':
-    #     env_register_id = 'FetchPickAndPlaceDeterministic-v1'
-    #     separator = FetchPickAndPlaceSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    #     os_indexes = [3, 4, 5] ## Outcome space is the object xyz position
-    # if args.environment == 'ant':
-    #     env_register_id = 'AntBulletEnvDeterministicPos-v0'
-    #     separator = AntSeparator
-    #     ss_min = -10
-    #     ss_max = 10
-    #     os_indexes = [28, 29] ## Outcome space is the ant xy position
-
-
-
-
 
     env_register_id = 'BallInCup3d-v0'
     gym_args = {}
@@ -108,6 +66,21 @@ if __name__ == '__main__':
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
+    elif args.environment == 'redundant_arm':
+        env_register_id = 'RedundantArmPos-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
+    elif args.environment == 'redundant_arm_no_walls':
+        env_register_id = 'RedundantArmPosNoWalls-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
+    elif args.environment == 'redundant_arm_no_walls_no_collision':
+        env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
+        separator = RedundantArmSeparator
+        ss_min = -1
+        ss_max = 1
     elif args.environment == 'redundant_arm_no_walls_limited_angles':
         env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
         separator = RedundantArmSeparator
@@ -124,35 +97,19 @@ if __name__ == '__main__':
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
+    elif args.environment == 'fetch_pick_and_place':
+        env_register_id = 'FetchPickAndPlaceDeterministic-v1'
+        separator = FetchPickAndPlaceSeparator
+        ss_min = -1
+        ss_max = 1
+    elif args.environment == 'ant':
+        env_register_id = 'AntBulletEnvDeterministicPos-v0'
+        separator = AntSeparator
+        ss_min = -10
+        ss_max = 10
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
     
-    # if args.environment == 'redundant_arm':
-    #     env_register_id = 'RedundantArmPos-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'redundant_arm_no_walls':
-    #     env_register_id = 'RedundantArmPosNoWalls-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'redundant_arm_no_walls_no_collision':
-    #     env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
-    #     separator = RedundantArmSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'fetch_pick_and_place':
-    #     env_register_id = 'FetchPickAndPlaceDeterministic-v1'
-    #     separator = FetchPickAndPlaceSeparator
-    #     ss_min = -1
-    #     ss_max = 1
-    # if args.environment == 'ant':
-    #     env_register_id = 'AntBulletEnvDeterministicPos-v0'
-    #     separator = AntSeparator
-    #     ss_min = -10
-    #     ss_max = 10
-        
     env = gym.make(env_register_id, **gym_args)
 
     try:
@@ -262,8 +219,10 @@ if __name__ == '__main__':
     # colors = [cm.rainbow(x) for x in evenly_spaced_interval]
 
     # colors = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes+1)
-    cmap = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes+1)
-    norm = matplotlib.colors.Normalize(vmin=0, vmax=n_init_method*n_init_episodes+1)
+    # cmap = plt.cm.get_cmap('hsv', n_init_method*n_init_episodes+1)
+    # norm = matplotlib.colors.Normalize(vmin=0, vmax=n_init_method*n_init_episodes+1)
+    cmap = plt.cm.get_cmap('hsv', n_init_method+1)
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=n_init_method+1)
 
     colors = cm.ScalarMappable(norm=norm, cmap=cmap)
 
@@ -810,10 +769,10 @@ if __name__ == '__main__':
                 test_limits_disagr[3] = max(test_mean_disagr)
             ## Figure for model ensemble disagreement
             test_ax_disagr.plot(range(max_step), test_mean_disagr,
-                                color=colors.to_rgba(i*n_init_episodes + j),
-                                # color=colors(i*n_init_episodes + j),
-                                # color=colors[i*n_init_episodes + j],
-                                linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                # color=colors.to_rgba(i*n_init_episodes + j),
+                                # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                color=colors.to_rgba(i),
+                                linestyle=linestyles[i],
                                 label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(test_mean_pred_error) < test_limits_pred_error[2]:
@@ -822,19 +781,19 @@ if __name__ == '__main__':
                 test_limits_pred_error[3] = max(test_mean_pred_error)
             ## Figure for pred_error
             test_ax_pred_error.plot(range(max_step), test_mean_pred_error,
-                                    color=colors.to_rgba(i*n_init_episodes + j),
-                                    # color=colors(i*n_init_episodes + j),
-                                    # color=colors[i*n_init_episodes + j],
-                                    linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                    # color=colors.to_rgba(i*n_init_episodes + j),
+                                    # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                    color=colors.to_rgba(i),
+                                    linestyle=linestyles[i],
                                     label=f'{init_method}_{init_episode}')
 
             sorted_idxs = test_mean_disagr.argsort()
             test_ax_pred_disagr.plot(test_mean_disagr[sorted_idxs],
                                      test_mean_pred_error[sorted_idxs],
-                                     color=colors.to_rgba(i*n_init_episodes + j),
-                                     # color=colors(i*n_init_episodes + j),
-                                     # color=colors[i*n_init_episodes + j],
-                                     linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                     # color=colors.to_rgba(i*n_init_episodes + j),
+                                     # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                     color=colors.to_rgba(i),
+                                     linestyle=linestyles[i],
                                      label=f'{init_method}_{init_episode}')
             ## On example trajs
             ## Compute mean and stddev of trajs disagreement
@@ -851,10 +810,10 @@ if __name__ == '__main__':
                 example_limits_disagr[3] = max(example_mean_disagr)
             ## Figure for model ensemble disagreement
             example_ax_disagr.plot(range(max_step), example_mean_disagr,
-                                   color=colors.to_rgba(i*n_init_episodes + j),
-                                   # color=colors(i*n_init_episodes + j),
-                                   # color=colors[i*n_init_episodes + j],
-                                   linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                   # color=colors.to_rgba(i*n_init_episodes + j),
+                                   # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                   color=colors.to_rgba(i),
+                                   linestyle=linestyles[i],
                                    label=f'{init_method}_{init_episode}')
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
@@ -863,19 +822,19 @@ if __name__ == '__main__':
                 example_limits_pred_error[3] = max(example_mean_pred_error)
             ## Figure for pred_error
             example_ax_pred_error.plot(range(max_step), example_mean_pred_error,
-                                       color=colors.to_rgba(i*n_init_episodes + j),
-                                       # color=colors(i*n_init_episodes + j),
-                                       # color=colors[i*n_init_episodes + j],
-                                       linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                       # color=colors.to_rgba(i*n_init_episodes + j),
+                                       # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                       color=colors.to_rgba(i),
+                                       linestyle=linestyles[i],
                                        label=f'{init_method}_{init_episode}')
 
             sorted_idxs = example_mean_disagr.argsort()
             example_ax_pred_disagr.plot(example_mean_disagr[sorted_idxs],
                                         example_mean_pred_error[sorted_idxs],
-                                        color=colors.to_rgba(i*n_init_episodes + j),
-                                        # color=colors(i*n_init_episodes + j),
-                                        # color=colors[i*n_init_episodes + j],
-                                        linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                        # color=colors.to_rgba(i*n_init_episodes + j),
+                                        # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
+                                        color=colors.to_rgba(i),
+                                        linestyle=linestyles[i],
                                         label=f'{init_method}_{init_episode}')
 
             print(f"\nPlotted for init_method {init_method} and init_episode {init_episode}\n")
