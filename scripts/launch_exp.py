@@ -117,6 +117,7 @@ if __name__ == '__main__':
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        gym_args['dof'] = 100
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
@@ -164,7 +165,7 @@ if __name__ == '__main__':
     else:
         obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
-    
+
     controller_params = \
     {
         'controller_input_dim': obs_dim,
