@@ -81,6 +81,9 @@ if __name__ == '__main__':
         Initializer = BrownianMotion
     elif args.init_method == 'levy-flight':
         Initializer = LevyFlight
+    elif args.init_method == 'colored-noise-beta-0':
+        Initializer = ColoredNoiseMotion
+        noise_beta = 0
     elif args.init_method == 'colored-noise-beta-1':
         Initializer = ColoredNoiseMotion
         noise_beta = 1
