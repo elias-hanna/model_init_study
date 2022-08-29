@@ -107,6 +107,7 @@ if __name__ == '__main__':
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        gym_args['dof'] = 100
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
@@ -236,6 +237,15 @@ if __name__ == '__main__':
 
         ssr_vis.set_trajectories(all_actions)
 
+        ## Ugly fix because the brownian motion rw is actually a urw and cnb0 is bm
+        for i in range(len(init_methods)):
+            if init_methods[i] == 'brownian-motion':
+                init_methods[i] = 'uniform-random-walk'
+                continue
+            if init_methods[i] == 'colored-noise-beta-0':
+                init_methods[i] = 'brownian-motion'
+                continue
+
         fig_path = os.path.join(path, f'{args.environment}_repartition_actions_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='action',
                            spe_fig_path=fig_path, legends=init_methods,
@@ -247,3 +257,12 @@ if __name__ == '__main__':
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='state',
                            spe_fig_path=fig_path, legends=init_methods,
                            mins=obs_mins, maxs=obs_maxs, plot_all=True)
+
+        for i in range(len(init_methods)):
+            if init_methods[i] == 'uniform-random-walk':
+                init_methods[i] = 'brownian-motion'
+                continue
+            if init_methods[i] == 'brownian-motion':
+                init_methods[i] = 'colored-noise-beta-0'
+                continue
+

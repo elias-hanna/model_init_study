@@ -114,7 +114,7 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                         rect.set_height(-height)
 
                 plt.title(f"Training data distribution for {dim_type} dimension {dim}")
-                plt.legend(legends, prop={'size': 15})
+                plt.legend(legends, prop={'size': 10})
                 plt.xlabel("Min-max normalized value of state for data samples")
                 plt.ylabel("Number of data samples per bin")
 
@@ -158,7 +158,7 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                                              bins=bins)
 
                 plt.title(f"Training data distribution for {dim_type} dimension {dim}")
-                plt.legend(legends, prop={'size': 15})
+                plt.legend(legends, prop={'size': 10})
                 plt.xlabel("Min-max normalized value of state for data samples")
                 plt.ylabel("Number of data samples per bin")
 

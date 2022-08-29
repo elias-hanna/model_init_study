@@ -86,6 +86,7 @@ if __name__ == '__main__':
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        gym_args['dof'] = 100
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
@@ -341,7 +342,7 @@ if __name__ == '__main__':
             std_pred_errors[i, j, 2] = np.nanstd(np.absolute(pred_error_vals))
 
             # cell_text[i][j] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
-            cell_text_full[j][i] = f"{round(mean_pred_errors[i,j,2],3)} \u00B1 {round(std_pred_errors[i,j,2],3)}"
+            cell_text_full[j][i] = f"{round(mean_pred_errors[i,j,2],1)} \u00B1 {round(std_pred_errors[i,j,2],1)}"
             #### N step Disagreement and Prediction Error ####
             #### We only do it on example trajs as test trajs changes... between reps ####
 
@@ -762,6 +763,14 @@ if __name__ == '__main__':
             test_mean_pred_error = np.nanmean(test_pred_errors[i,j], axis=0)
             test_std_pred_error = np.nanstd(test_pred_errors[i,j], axis=0)
 
+            ## Do small trick for label because data has a wrong name lol
+            label_method = f'{init_method}'
+            if label_method == 'brownian-motion':
+                label_method = 'uniform-random-walk'
+            if label_method == 'colored-noise-beta-0':
+                label_method = 'brownian-motion'
+            label = f'{label_method}_{init_episode}'
+
             ## Update plot params
             if min(test_mean_disagr) < test_limits_disagr[2]:
                 test_limits_disagr[2] = min(test_mean_disagr)
@@ -773,7 +782,8 @@ if __name__ == '__main__':
                                 # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                 color=colors.to_rgba(i),
                                 linestyle=linestyles[i],
-                                label=f'{init_method}_{init_episode}')
+                                # label=f'{init_method}_{init_episode}')
+                                label=label)
             ## Update plot params
             if min(test_mean_pred_error) < test_limits_pred_error[2]:
                 test_limits_pred_error[2] = min(test_mean_pred_error)
@@ -785,7 +795,8 @@ if __name__ == '__main__':
                                     # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                     color=colors.to_rgba(i),
                                     linestyle=linestyles[i],
-                                    label=f'{init_method}_{init_episode}')
+                                    # label=f'{init_method}_{init_episode}')
+                                    label=label)
 
             sorted_idxs = test_mean_disagr.argsort()
             test_ax_pred_disagr.plot(test_mean_disagr[sorted_idxs],
@@ -794,7 +805,8 @@ if __name__ == '__main__':
                                      # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                      color=colors.to_rgba(i),
                                      linestyle=linestyles[i],
-                                     label=f'{init_method}_{init_episode}')
+                                     # label=f'{init_method}_{init_episode}')
+                                     label=label)
             ## On example trajs
             ## Compute mean and stddev of trajs disagreement
             example_mean_disagr = np.nanmean(example_disagrs[i,j], axis=0)
@@ -814,7 +826,8 @@ if __name__ == '__main__':
                                    # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                    color=colors.to_rgba(i),
                                    linestyle=linestyles[i],
-                                   label=f'{init_method}_{init_episode}')
+                                   # label=f'{init_method}_{init_episode}')
+                                   label=label)
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
                 example_limits_pred_error[2] = min(example_mean_pred_error)
@@ -826,7 +839,8 @@ if __name__ == '__main__':
                                        # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                        color=colors.to_rgba(i),
                                        linestyle=linestyles[i],
-                                       label=f'{init_method}_{init_episode}')
+                                       # label=f'{init_method}_{init_episode}')
+                                       label=label)
 
             sorted_idxs = example_mean_disagr.argsort()
             example_ax_pred_disagr.plot(example_mean_disagr[sorted_idxs],
@@ -835,7 +849,8 @@ if __name__ == '__main__':
                                         # linestyle=linestyles[(i*n_init_episodes + j)%len(linestyles)],
                                         color=colors.to_rgba(i),
                                         linestyle=linestyles[i],
-                                        label=f'{init_method}_{init_episode}')
+                                        # label=f'{init_method}_{init_episode}')
+                                        label=label)
 
             print(f"\nPlotted for init_method {init_method} and init_episode {init_episode}\n")
             # if plot_stddev:
@@ -870,6 +885,15 @@ if __name__ == '__main__':
         example_ax_pred_disagr.set_xlabel(example_limits_pred_disagr[0])
         example_ax_pred_disagr.set_xlabel(example_limits_pred_disagr[1])
         
+        ## Set log scale if fastsim
+        if args.environment == 'fastsim_maze' or args.environment == 'fastsim_maze_traps':
+            test_ax_pred_error.set_yscale('log')
+
+            test_ax_pred_disagr.set_yscale('log')
+
+            example_ax_pred_error.set_yscale('log')
+
+            example_ax_pred_disagr.set_yscale('log')
         
         ## Set plot limits
         x_min = test_limits_disagr[0]; x_max = test_limits_disagr[1];
@@ -895,7 +919,7 @@ if __name__ == '__main__':
         
         example_ax_disagr.set_xlim(x_min,x_max)
         example_ax_disagr.set_ylim(y_min,y_max)
-        
+
         x_min = example_limits_pred_error[0]; x_max = example_limits_pred_error[1];
         y_min = example_limits_pred_error[2]; y_max = example_limits_pred_error[3]
         
@@ -965,10 +989,11 @@ if __name__ == '__main__':
 
 
     ## Save aggregated data
-            
     np.savez("pred_error_data.npz",
              mean_pred_errors=mean_pred_errors,
              std_pred_errors=std_pred_errors)
+
+    print(f'Saved file pred_error_data.npz')
 
     ###############################################################
     ###############################################################
@@ -994,7 +1019,8 @@ if __name__ == '__main__':
     
     plt.savefig(f"{args.environment}_quant_pred_error_1_step", dpi=300, bbox_inches='tight')
     
-
+    print(f'Saved figure {args.environment}_quant_pred_error_1_step.png')
+    
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)
     ax.axis('off')
@@ -1013,6 +1039,7 @@ if __name__ == '__main__':
     
     plt.savefig(f"{args.environment}_quant_pred_error_20_step", dpi=300, bbox_inches='tight')
 
+    print(f'Saved figure {args.environment}_quant_pred_error_20_step.png')
 
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)
@@ -1031,6 +1058,9 @@ if __name__ == '__main__':
     plt.title(f'Mean prediction error and standard deviation for complete horizon predictions on {args.environment} environment', y=.7)
     
     plt.savefig(f"{args.environment}_quant_pred_error_full", dpi=300, bbox_inches='tight')
+
+    print(f'Saved figure {args.environment}_quant_pred_error_full.png')
+
     ###############################################################
     ###############################################################
     #################### Plot all on same fig #####################
@@ -1102,13 +1132,13 @@ if __name__ == '__main__':
 
     ## Set legend
 
-    test_ax_disagr.legend()
-    test_ax_pred_error.legend()
-    test_ax_pred_disagr.legend()
+    test_ax_disagr.legend(prop={'size': 1})
+    test_ax_pred_error.legend(prop={'size': 1})
+    test_ax_pred_disagr.legend(prop={'size': 1})
 
-    example_ax_disagr.legend()
-    example_ax_pred_error.legend()
-    example_ax_pred_disagr.legend()
+    example_ax_disagr.legend(prop={'size': 1})
+    example_ax_pred_error.legend(prop={'size': 1})
+    example_ax_pred_disagr.legend(prop={'size': 1})
 
     ## Set plot title
     test_ax_disagr.set_title(f"Mean model ensemble disagreeement along test trajectories")
@@ -1133,11 +1163,5 @@ if __name__ == '__main__':
     example_fig_pred_disagr.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_disagr",
                                bbox_inches='tight')
 
-
-
-
-
-    
-    # plt.show()
-
+    print()
     
