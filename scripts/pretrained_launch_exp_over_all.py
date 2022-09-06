@@ -251,7 +251,7 @@ if __name__ == '__main__':
     ## Will contain all means on a single plot
     # Create 4 figs
     example_fig_traj_plot = plt.figure()
-    example_ax_traj_plot = fig_traj_plot.add_subplot(111)
+    example_ax_traj_plot = example_fig_traj_plot.add_subplot(111)
     
     example_fig_pred_error = plt.figure()
     example_ax_pred_error = example_fig_pred_error.add_subplot(111)
