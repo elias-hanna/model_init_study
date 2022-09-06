@@ -65,8 +65,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--environment', '-e', type=str, default='ball_in_cup')
 
-    parser.add_argument('--pretrained-data-path', type=str)
-
     args = parser.parse_args()
 
     dynamics_model = DynamicsModel
@@ -270,16 +268,7 @@ if __name__ == '__main__':
 
     ## Train the model
     trained = False
-    ## TODO: Get the path of the file, should be able to get it
-    ## from init method, init rep, and that's all -> need to refactor the model.pth obtained
-    ## Surement un truc du genre je regarderais demain
-    if args.pretrained_data_path is not None:
-        data_path = args.pretrained_data_path
-        path = os.path.join(data_path, 'trained_model.pth')
-        dynamics_model.load_state_dict(torch.load(path))
-        dynamics_model.eval()
-        trained = True
-                
+                    
     while not trained:
         dynamics_model = DynamicsModel(params)
         # Add data to replay buffer
