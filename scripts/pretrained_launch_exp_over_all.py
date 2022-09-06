@@ -490,6 +490,7 @@ if __name__ == '__main__':
                                      0, args.pred_err_plot_upper_lim]
 
         ## Plot example traj
+        params['model'] = dynamics_model # to pass down to the visualizer routines
         n_step_visualizer = NStepErrorVisualization(params)
         ## Figure for plotting trajectories
         example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
