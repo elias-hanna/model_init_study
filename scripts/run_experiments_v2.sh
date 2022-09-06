@@ -48,9 +48,10 @@ methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-
 # methods=(random-actions)
 
 for env in "${environments[@]}"; do
+    mkdir test_${env}${sup_args}_daqd_results
     cd test_${env}${sup_args}_daqd_results
     echo "Processing following folder"; pwd
-    python ../../../scripts/pretrained_launch_exp_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --pretrained-data-path ~/results/model_init_study_daqd_no_init_results/ $sup_args
+    python ../../scripts/pretrained_launch_exp_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --pretrained-data-path ~/results/model_init_study_daqd_no_init_results/ $sup_args
     cd ..
     cpt=$((cpt+1))
     echo "finished plotting pred errors for $env\n\n"

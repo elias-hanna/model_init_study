@@ -490,6 +490,7 @@ if __name__ == '__main__':
                                      0, args.pred_err_plot_upper_lim]
 
         ## Plot example traj
+        n_step_visualizer = NStepErrorVisualization(params)
         ## Figure for plotting trajectories
         example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
                                   n_step_visualizer.test_trajectories[0, :, y_idx],
