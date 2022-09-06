@@ -82,38 +82,53 @@ if __name__ == '__main__':
         separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
+        x_idx = 0
+        y_idx = 1
+        z_idx = 2
     elif args.environment == 'redundant_arm':
         env_register_id = 'RedundantArmPos-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        x_idx = -2
+        y_idx = -1
     elif args.environment == 'redundant_arm_no_walls':
         env_register_id = 'RedundantArmPosNoWalls-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        x_idx = -2
+        y_idx = -1
     elif args.environment == 'redundant_arm_no_walls_no_collision':
         env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
+        x_idx = -2
+        y_idx = -1
     elif args.environment == 'redundant_arm_no_walls_limited_angles':
         env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
         separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
         gym_args['dof'] = 100
+        x_idx = -2
+        y_idx = -1
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
+        x_idx = 0
+        y_idx = 1
     elif args.environment == 'fastsim_maze_traps':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
+        x_idx = 0
+        y_idx = 1
     elif args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
         separator = FetchPickAndPlaceSeparator
@@ -235,19 +250,36 @@ if __name__ == '__main__':
     ## Do a new plot
     ## Will contain all means on a single plot
     # Create 4 figs
+    example_fig_traj_plot = plt.figure()
+    example_ax_traj_plot = fig_traj_plot.add_subplot(111)
+    
     example_fig_pred_error = plt.figure()
     example_ax_pred_error = example_fig_pred_error.add_subplot(111)
 
     example_fig_cum_pred_error = plt.figure()
     example_ax_cum_pred_error = example_fig_cum_pred_error.add_subplot(111)
+    if args.environment == 'ball_in_cup':
+        example_fig_cum_pred_error = plt.figure()
+        example_ax_cum_pred_error = example_fig_cum_pred_error.add_subplot(111, projection='3d')
 
     # Init limits for each fig
     example_limits_pred_error = [0, max_step,
                                  0, 0]
 
+    example_limits_traj_plot = [ss_min, ss_max,
+                                ss_min, ss_max]
+    
+    if args.environment == 'ball_in_cup':
+        example_limits_traj_plot = [ss_min, ss_max,
+                                    ss_min, ss_max,
+                                    ss_min, ss_max]
+        
     # Init labels for each fig
     example_labels_pred_error = ['Number of steps on environment', 'Mean prediction error']
     example_labels_cum_pred_error = ['Number of steps on environment', 'Cumulated mean prediction error (1-step predictions)']
+    example_labels_traj_plot = ['X axis', 'Y axis']
+    if args.environment == 'ball_in_cup':
+        example_labels_traj_plot = ['X axis', 'Y axis', 'Z axis']
 
     ## Colors for plots
     cmap = plt.cm.get_cmap('hsv', n_init_method+1)
@@ -299,13 +331,7 @@ if __name__ == '__main__':
                 else:
                     raise ValueError("No data path for pretrained data has been given")
                 
-                # ## Execute each visualizer routines
-                # data_path = args.init_data_path
-                # path = f'{data_path}/{args.environment}_results/{args.rep}/'\
-                #        f'{args.environment}_{args.init_method}_{args.init_episodes}_model_wnb.pt'
-                # dynamics_model.load_state_dict(torch.load(path))
-                # dynamics_model.eval()
-
+                ## Execute each visualizer routines
                 params['model'] = dynamics_model # to pass down to the visualizer routines
                 test_traj_visualizer = TestTrajectoriesVisualization(params)
                 n_step_visualizer = NStepErrorVisualization(params)
@@ -362,7 +388,16 @@ if __name__ == '__main__':
                 rep_cpt += 1
 
                 print(f"\n Finished processing {rep_cpt}th rep of {init_method}{sup_args} with {init_episode} init budget\n")
-                
+
+
+            ## Compute mean trajectory for each example traj
+            # example_pred_trajs shape: (n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim)
+
+            mean_example_traj_x = np.nanmean(example_pred_trajs[i,j,:2:,:,x_idx], axis=0)
+            mean_example_traj_y = np.nanmean(example_pred_trajs[i,j,:2:,:,y_idx], axis=0)
+            if args.environment == 'ball_in_cup':
+                mean_example_traj_z = np.nanmean(example_pred_trajs[i,j,:2:,:,z_idx], axis=0)
+
             ## Mean pred error on full length recursive prediction on example trajs
             pred_error_vals = []
 
@@ -420,7 +455,7 @@ if __name__ == '__main__':
             ## Update plot params
             if min(example_mean_pred_error) < example_limits_pred_error[2]:
                 example_limits_pred_error[2] = min(example_mean_pred_error)
-            if max(example_mean_pred_error) < example_limits_pred_error[3]:
+            if max(example_mean_pred_error) > example_limits_pred_error[3]:
                 example_limits_pred_error[3] = max(example_mean_pred_error)
             ## Figure for pred_error
             example_ax_pred_error.plot(range(max_step), example_mean_pred_error,
@@ -434,11 +469,41 @@ if __name__ == '__main__':
                                            linestyle=linestyles[i],
                                            label=label)
 
+            ## Figure for plotting trajectories
+            example_ax_traj_plot.plot(mean_example_traj_x,
+                                      mean_example_traj_y,
+                                      color=colors.to_rgba(i),
+                                      linestyle=linestyles[i],
+                                      label=label)
+            if args.environment == 'ball_in_cup':
+                example_ax_traj_plot.plot(mean_example_traj_x,
+                                          mean_example_traj_y,
+                                          mean_example_traj_z,
+                                          color=colors.to_rgba(i),
+                                          linestyle=linestyles[i],
+                                          label=label)
+            
             print(f"\nPlotted for init_method {init_method} and init_episode {init_episode}\n")
             ## init method = i; init episode = j
 
         example_limits_pred_error = [0, max_step,
                                      0, args.pred_err_plot_upper_lim]
+
+        ## Plot example traj
+        ## Figure for plotting trajectories
+        example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
+                                  n_step_visualizer.test_trajectories[0, :, y_idx],
+                                  color='black',
+                                  linestyle=linestyles[i+1],
+                                  label='ground_truth')
+        if args.environment == 'ball_in_cup':
+            example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
+                                      n_step_visualizer.test_trajectories[0, :, y_idx],
+                                      n_step_visualizer.test_trajectories[0, :, z_idx],
+                                      color='black',
+                                      linestyle=linestyles[i+1],
+                                      label='ground_truth')
+
         
         ## Plot params
         # Set plot labels
@@ -447,7 +512,10 @@ if __name__ == '__main__':
 
         example_ax_cum_pred_error.set_xlabel(example_labels_cum_pred_error[0])
         example_ax_cum_pred_error.set_ylabel(example_labels_cum_pred_error[1])
-        
+
+        example_ax_traj_plot.set_xlabel(example_labels_traj_plot[0])
+        example_ax_traj_plot.set_ylabel(example_labels_traj_plot[1])
+
         ## Set log scale if fastsim
         if args.environment == 'fastsim_maze' or args.environment == 'fastsim_maze_traps':
             example_ax_pred_error.set_yscale('log')
@@ -464,9 +532,17 @@ if __name__ == '__main__':
         example_ax_cum_pred_error.set_xlim(x_min,x_max)
         example_ax_cum_pred_error.set_ylim(y_min,y_max)
 
+        x_min = example_limits_traj_plot[0]; x_max = example_limits_traj_plot[1];
+        y_min = example_limits_traj_plot[2]; y_max = example_limits_traj_plot[3]
+
+        example_ax_traj_plot.set_xlim(x_min,x_max)
+        example_ax_traj_plot.set_ylim(y_min,y_max)
+
         ## Set legend
         
         example_ax_pred_error.legend()
+        example_ax_cum_pred_error.legend()
+        example_ax_traj_plot.legend()
 
         # example_ax_cum_pred_error.legend()
 
@@ -474,18 +550,25 @@ if __name__ == '__main__':
         example_ax_pred_error.set_title(f"Mean prediction error along example trajectories with {init_episode} budget")
 
         example_ax_cum_pred_error.set_title(f"Cumulated mean prediction error along example trajectories with {init_episode} budget")
+
+        example_ax_traj_plot.set_title(f"Predicted trajectory vs example trajectory with {init_episode} budget")
+        
         ## Save fig        
         example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error_{init_episode}",
                                        bbox_inches='tight')        
 
         example_fig_cum_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_cum_pred_error_{init_episode}",
                                        bbox_inches='tight')        
+
+        example_fig_traj_plot.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_cum_traj_plot_{init_episode}",
+                                       bbox_inches='tight')        
         ## Clear figs
         example_ax_pred_error.cla()
         example_ax_cum_pred_error.cla()
+        example_ax_cum_traj_plot.cla()
 
     ## Save aggregated data
-    np.savez("pred_error_data.npz",
+    np.savez("pretrained_pred_error_data.npz",
              mean_pred_errors=mean_pred_errors,
              std_pred_errors=std_pred_errors,
              cum_pred_errors=cum_pred_errors)
@@ -564,29 +647,29 @@ if __name__ == '__main__':
     ########################### below #############################
     ###############################################################
             
-    example_limits_pred_error = [0, max_step,
-                                 0, args.pred_err_plot_upper_lim]
+    # example_limits_pred_error = [0, max_step,
+    #                              0, args.pred_err_plot_upper_lim]
 
-    ## Plot params
-    # Set plot labels
-    example_ax_pred_error.set_xlabel(example_labels_pred_error[0])
-    example_ax_pred_error.set_ylabel(example_labels_pred_error[1])
+    # ## Plot params
+    # # Set plot labels
+    # example_ax_pred_error.set_xlabel(example_labels_pred_error[0])
+    # example_ax_pred_error.set_ylabel(example_labels_pred_error[1])
 
-    ## Set plot limits
-    x_min = example_limits_pred_error[0]; x_max = example_limits_pred_error[1];
-    y_min = example_limits_pred_error[2]; y_max = example_limits_pred_error[3]
+    # ## Set plot limits
+    # x_min = example_limits_pred_error[0]; x_max = example_limits_pred_error[1];
+    # y_min = example_limits_pred_error[2]; y_max = example_limits_pred_error[3]
     
-    example_ax_pred_error.set_xlim(x_min,x_max)
-    example_ax_pred_error.set_ylim(y_min,y_max)
+    # example_ax_pred_error.set_xlim(x_min,x_max)
+    # example_ax_pred_error.set_ylim(y_min,y_max)
 
-    ## Set legend
-    example_ax_pred_error.legend(prop={'size': 1})
+    # ## Set legend
+    # example_ax_pred_error.legend(prop={'size': 1})
 
-    ## Set plot title
-    example_ax_pred_error.set_title(f"Mean prediction error along example trajectories")
-    ## Save fig
-    example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
-                               bbox_inches='tight')
+    # ## Set plot title
+    # example_ax_pred_error.set_title(f"Mean prediction error along example trajectories")
+    # ## Save fig
+    # example_fig_pred_error.savefig(f"{args.dump_path}/{args.environment}_example_trajectories_pred_error",
+    #                            bbox_inches='tight')
 
     print()
     
