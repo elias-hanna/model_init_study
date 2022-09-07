@@ -1,3 +1,84 @@
+def process_rep(rep_cpt,
+                example_pred_trajs,
+                example_1_step_trajs,
+                example_1_step_pred_errors,
+                example_20_step_trajs,
+                example_20_step_pred_errors,
+                init_episode,
+                init_method,
+                args,
+                params):
+    ## For each loaded model, relaunch the procedure to evaluate error on trajs
+            ## TODO: Get the path of the file, should be able to get it
+    ## from init method, init rep, and that's all -> need to refactor the model.pth obtained
+    ## Surement un truc du genre je regarderais demain
+    dynamics_model = DynamicsModel(params)
+    if args.pretrained_data_path is not None:
+        data_path = args.pretrained_data_path
+        path = os.path.join(data_path,
+                            f'{args.environment}{sup_args}_daqd_results/{rep_cpt+1}/{init_method}_{init_episode}_energy_minimization_random_10_results/trained_model.pth')
+        dynamics_model.load(path)
+    else:
+        raise ValueError("No data path for pretrained data has been given")
+
+    ## Execute each visualizer routines
+    params['model'] = dynamics_model # to pass down to the visualizer routines
+    test_traj_visualizer = TestTrajectoriesVisualization(params)
+    n_step_visualizer = NStepErrorVisualization(params)
+    
+    ## Visualize n step error and disagreement ###
+
+    n_step_visualizer.set_n(1)
+
+    examples_1_step_trajs, examples_1_step_disagrs, examples_1_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        init_method,
+        init_episode,
+        'examples', dump_separate=True, no_sep=True)
+
+    n_step_visualizer.set_n(20)
+
+    examples_20_step_trajs, examples_20_step_disagrs, examples_20_step_pred_errors = n_step_visualizer.dump_plots(
+        args.environment,
+        init_method,
+        init_episode,
+        'examples', dump_separate=True, no_sep=True)
+
+    ### Full recursive prediction visualizations ###
+    examples_pred_trajs, examples_disagrs, examples_pred_errors = test_traj_visualizer.dump_plots(
+        args.environment,
+        init_method,
+        init_episode,
+        'examples', dump_separate=True, no_sep=True)
+
+    ### Fill the rep data with collected results ###
+
+    example_pred_trajs[i,j,rep_cpt*trajs_per_rep:
+                       rep_cpt*trajs_per_rep
+                       + trajs_per_rep] = examples_pred_trajs
+    example_pred_errors[i,j,rep_cpt*trajs_per_rep:
+                        rep_cpt*trajs_per_rep
+                        + trajs_per_rep] = examples_pred_errors
+
+    ### For N step vis ###
+    example_1_step_trajs[rep_cpt*trajs_per_rep:
+                         rep_cpt*trajs_per_rep
+                         + trajs_per_rep] = examples_1_step_trajs
+    example_1_step_pred_errors[rep_cpt*trajs_per_rep:
+                               rep_cpt*trajs_per_rep
+                               + trajs_per_rep] = examples_1_step_pred_errors
+
+    example_20_step_trajs[rep_cpt*trajs_per_rep:
+                         rep_cpt*trajs_per_rep
+                         + trajs_per_rep] = examples_20_step_trajs
+    example_20_step_pred_errors[rep_cpt*trajs_per_rep:
+                               rep_cpt*trajs_per_rep
+                               + trajs_per_rep] = examples_20_step_pred_errors
+
+    print(f"\n Finished processing {rep_cpt}th rep of {init_method}{sup_args} with {init_episode} init budget\n")
+
+
+
 ## Call this piece of code from the top folder containing all env data ##
 if __name__ == '__main__':
     # Local imports
@@ -63,6 +144,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--pretrained-data-path', type=str)
 
+    parser.add_argument('--transfer-selection', type=str, default='all')
+    
     parser.add_argument('--no-training', action='store_true')
 
     args = parser.parse_args()
@@ -252,15 +335,15 @@ if __name__ == '__main__':
     # Create 4 figs
     example_fig_traj_plot = plt.figure()
     example_ax_traj_plot = example_fig_traj_plot.add_subplot(111)
+
+    if args.environment == 'ball_in_cup':
+        example_ax_traj_plot = example_fig_traj_plot.add_subplot(111, projection='3d')
     
     example_fig_pred_error = plt.figure()
     example_ax_pred_error = example_fig_pred_error.add_subplot(111)
 
     example_fig_cum_pred_error = plt.figure()
     example_ax_cum_pred_error = example_fig_cum_pred_error.add_subplot(111)
-    if args.environment == 'ball_in_cup':
-        example_fig_cum_pred_error = plt.figure()
-        example_ax_cum_pred_error = example_fig_cum_pred_error.add_subplot(111, projection='3d')
 
     # Init limits for each fig
     example_limits_pred_error = [0, max_step,
@@ -313,11 +396,32 @@ if __name__ == '__main__':
     rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
     ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
 
+    from multiprocessing import Pool
+    from itertools import repeat
+    
     for j in range(n_init_episodes):
         init_episode = init_episodes[j]
         for i in range(n_init_method):
             init_method =  init_methods[i]
             rep_cpt = 0
+
+            ### Doesn't work because of model inference not parallelizable across processes
+            # ## Parallelized
+            # ## Fills the previously setup datasets
+            # with Pool() as pool:
+            #     pool.starmap(process_rep, zip(range(0,len(rep_folders)),
+            #                                    repeat(example_pred_trajs),
+            #                                    repeat(example_1_step_trajs),
+            #                                    repeat(example_1_step_pred_errors),
+            #                                    repeat(example_20_step_trajs),
+            #                                    repeat(example_20_step_pred_errors),
+            #                                    repeat(init_episode),
+            #                                    repeat(init_method),
+            #                                    repeat(args),
+            #                                    repeat(params)))
+
+            # exit()
+            
             for rep_path in rep_folders:
                 ## For each loaded model, relaunch the procedure to evaluate error on trajs
                 ## TODO: Get the path of the file, should be able to get it
@@ -325,8 +429,19 @@ if __name__ == '__main__':
                 ## Surement un truc du genre je regarderais demain
                 if args.pretrained_data_path is not None:
                     data_path = args.pretrained_data_path
-                    path = os.path.join(data_path,
-                                        f'{args.environment}{sup_args}_daqd_results/{rep_cpt+1}/{init_method}_{init_episode}_energy_minimization_random_10_results/trained_model.pth')
+                    if args.transfer_selection == 'all':
+                        path = os.path.join(data_path,
+                                            f'{args.environment}{sup_args}_daqd_results/' \
+                                            f'{rep_cpt+1}/{init_method}_{init_episode}_' \
+                                            f'energy_minimization_results/' \
+                                            f'trained_model.pth')
+                    elif args.transfer_selection == 'random' or \
+                         args.transfer_selection == 'disagr':
+                        path = os.path.join(data_path,
+                                            f'{args.environment}{sup_args}_daqd_results/' \
+                                            f'{rep_cpt+1}/{init_method}_{init_episode}_' \
+                                            f'energy_minimization_{args.transfer_selection}_' \
+                                            f'10_results/trained_model.pth')
                     dynamics_model.load(path)
                 else:
                     raise ValueError("No data path for pretrained data has been given")
@@ -462,7 +577,7 @@ if __name__ == '__main__':
                                        color=colors.to_rgba(i),
                                        linestyle=linestyles[i],
                                        label=label)
-
+            
             ## Figure for cumulated pred_error
             example_ax_cum_pred_error.plot(range(max_step), cum_pred_error,
                                            color=colors.to_rgba(i),
@@ -470,11 +585,6 @@ if __name__ == '__main__':
                                            label=label)
 
             ## Figure for plotting trajectories
-            example_ax_traj_plot.plot(mean_example_traj_x,
-                                      mean_example_traj_y,
-                                      color=colors.to_rgba(i),
-                                      linestyle=linestyles[i],
-                                      label=label)
             if args.environment == 'ball_in_cup':
                 example_ax_traj_plot.plot(mean_example_traj_x,
                                           mean_example_traj_y,
@@ -482,7 +592,12 @@ if __name__ == '__main__':
                                           color=colors.to_rgba(i),
                                           linestyle=linestyles[i],
                                           label=label)
-            
+            else:
+                example_ax_traj_plot.plot(mean_example_traj_x,
+                                          mean_example_traj_y,
+                                          color=colors.to_rgba(i),
+                                          linestyle=linestyles[i],
+                                          label=label)
             print(f"\nPlotted for init_method {init_method} and init_episode {init_episode}\n")
             ## init method = i; init episode = j
 
@@ -493,19 +608,17 @@ if __name__ == '__main__':
         params['model'] = dynamics_model # to pass down to the visualizer routines
         n_step_visualizer = NStepErrorVisualization(params)
         ## Figure for plotting trajectories
-        example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
-                                  n_step_visualizer.test_trajectories[0, :, y_idx],
-                                  color='black',
-                                  linestyle=linestyles[i+1],
-                                  label='ground_truth')
         if args.environment == 'ball_in_cup':
             example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
                                       n_step_visualizer.test_trajectories[0, :, y_idx],
                                       n_step_visualizer.test_trajectories[0, :, z_idx],
                                       color='black',
-                                      linestyle=linestyles[i+1],
                                       label='ground_truth')
-
+        else:
+            example_ax_traj_plot.plot(n_step_visualizer.test_trajectories[0, :, x_idx],
+                                      n_step_visualizer.test_trajectories[0, :, y_idx],
+                                      color='black',
+                                      label='ground_truth')
         
         ## Plot params
         # Set plot labels
@@ -567,7 +680,7 @@ if __name__ == '__main__':
         ## Clear figs
         example_ax_pred_error.cla()
         example_ax_cum_pred_error.cla()
-        example_ax_cum_traj_plot.cla()
+        example_ax_traj_plot.cla()
 
     ## Save aggregated data
     np.savez("pretrained_pred_error_data.npz",

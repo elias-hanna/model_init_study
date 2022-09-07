@@ -38,24 +38,31 @@ methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-
 cpt=0
 
 episodes=(20)
+# sup_args=--no-training
 
 environments=(ball_in_cup redundant_arm_no_walls_limited_angles fastsim_maze fastsim_maze_traps)
-methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-1 colored-noise-beta-2 random-policies no-init no-init--perfect-model)
+methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-1 colored-noise-beta-2 random-policies no-init)
 # methods=(random-actions brownian-motion)
 
 # environments=(ball_in_cup)
 # methods=(random-actions)
-# selection=(all random disagr)
-selection=(random)
 
-for sel in "${selection[@]}";do
-    cd $sel
-    for env in "${environments[@]}"; do
-        cd test_${env}_daqd_results
-        echo "Processing following folder"; pwd
-        python ../../../scripts/pretrained_launch_exp_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --pretrained-data-path ~/results/model_init_study_daqd_results/$sel
-        cd ..
-        cpt=$((cpt+1))
-        echo "finished plotting pred errors for $env\n\n"
+# selection=(all random disagr)
+selection=(all disagr)
+
+sup_args=('')
+
+for sup_arg in "${sup_args[@]}";do
+    for sel in "${selection[@]}";do
+        cd ${sel}${sup_arg}
+        for env in "${environments[@]}"; do
+            cd ${env}${sup_arg}_daqd_results
+            echo "Processing following folder"; pwd
+            python ../../../scripts/pretrained_launch_exp_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --pretrained-data-path ~/results/model_init_study_daqd_results/${sel}${sup_arg} $sup_arg --transfer-selection $sel
+            cd ..
+            cpt=$((cpt+1))
+            echo "finished plotting pred errors for $env"
+            echo ""
+        done
     done
 done
