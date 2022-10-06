@@ -199,7 +199,9 @@ if __name__ == '__main__':
                 loc_obs_maxs = np.max(form_obs, axis=0)
                 obs_maxs = np.array([max(obs_maxs[idx], loc_obs_maxs[idx])
                                for idx in range(len(obs_mins))])
-                
+        
+        print('###########################################################################')
+        print(f'Environment: {args.environment}')
         for init_method in init_methods:
             actions = []
             observations = []
@@ -232,9 +234,13 @@ if __name__ == '__main__':
 
             all_actions.append(copy.copy(form_actions))
             all_observations.append(copy.copy(form_obs))
-
+            print(); print(f"Init method: {init_method}, total actions: {len(form_actions)}, total obs: {len(form_obs)}"); print()
+            if len(np.argwhere(np.isnan(form_actions))) > 0 and args.environment != 'fastsim_maze_traps':
+                print("WARNING: form actions contains NANs while it should not")
+            if len(np.argwhere(np.isnan(form_obs))) > 0 and args.environment != 'fastsim_maze_traps':
+                print("WARNING: form obs contains NANs while it should not")
         ## Plot all on same plot
-
+        print('###########################################################################')
         ssr_vis.set_trajectories(all_actions)
 
         ## Ugly fix because the brownian motion rw is actually a urw and cnb0 is bm
@@ -245,18 +251,17 @@ if __name__ == '__main__':
             if init_methods[i] == 'colored-noise-beta-0':
                 init_methods[i] = 'brownian-motion'
                 continue
-
         fig_path = os.path.join(path, f'{args.environment}_repartition_actions_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='action',
-                           spe_fig_path=fig_path, legends=init_methods,
-                           mins=actions_mins, maxs=actions_maxs, plot_all=True)
+                           spe_fig_path=fig_path, legends=init_methods, plot_all=True)
+                           # mins=actions_mins, maxs=actions_maxs, plot_all=True)
 
         ssr_vis.set_trajectories(all_observations)
 
         fig_path = os.path.join(path, f'{args.environment}_repartition_obs_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='state',
-                           spe_fig_path=fig_path, legends=init_methods,
-                           mins=obs_mins, maxs=obs_maxs, plot_all=True)
+                           spe_fig_path=fig_path, legends=init_methods, plot_all=True)
+                           # mins=obs_mins, maxs=obs_maxs, plot_all=True)
 
         for i in range(len(init_methods)):
             if init_methods[i] == 'uniform-random-walk':
