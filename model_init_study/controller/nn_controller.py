@@ -2,7 +2,8 @@
 # from diversity_algorithms.controllers.fixed_structure_nn_numpy import SimpleNeuralControllerNumpy as SimpleNeuralController
 
 ## Local imports
-from mb_ge.controller.controller import Controller
+# from mb_ge.controller.controller import Controller
+from model_init_study.controller.controller import Controller
 
 # coding: utf-8
 

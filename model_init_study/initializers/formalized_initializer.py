@@ -103,8 +103,9 @@ if __name__ == '__main__':
 
     nreps = 1000
     nlags = round(min(10*np.log10(max_step), max_step - 1))
+    nlags = max_step - 1
     step_size = .1
-    sigma_cnrw = .001
+    sigma_cnrw = .005
     
     params = \
     {
@@ -208,7 +209,7 @@ if __name__ == '__main__':
 
     axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
 
-    axs[0,0].set_title('Correlogram for Brownian Motion')
+    axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
     axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
 
