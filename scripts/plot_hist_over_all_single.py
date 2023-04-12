@@ -4,6 +4,7 @@ from scipy.spatial import cKDTree as KDTree
 import random
 import time
 import copy
+from jsd import JSdivergence
 
 def format_data(actions, observations):
     ## Format data of actions and observations
@@ -31,8 +32,12 @@ def format_data(actions, observations):
             curr_ds_ptr += len(observations[i][j])-1
 
     # Do some cleaning on the trajectories data
-    form_actions = form_actions[np.isfinite(form_actions).any(axis=1)]
-    form_obs = form_obs[np.isfinite(form_obs).any(axis=1)]
+    finite_idxs_a = np.isfinite(form_actions).any(axis=1)
+    form_actions = form_actions[finite_idxs_a]
+    form_obs = form_obs[finite_idxs_a]
+    finite_idxs_s = np.isfinite(form_obs).any(axis=1)
+    form_obs = form_obs[finite_idxs_s]
+    form_actions = form_actions[finite_idxs_s]
     form_ds = form_ds[np.isfinite(form_ds).any(axis=1)]
 
     return form_actions, form_obs, form_ds
@@ -147,9 +152,44 @@ if __name__ == '__main__':
 
     ssr_vis = StateSpaceRepartitionVisualization(params)
 
+    ## Plot table with Jensen Shannon divergence for considered data distribution vs iid
+    column_headers = [init_method for init_method in init_methods]
+    row_headers = [init_episode for init_episode in init_episodes]
+    cell_text_js_a = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
+    cell_text_js_s = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
+    cell_text_js_as = [["" for _ in range(len(column_headers))] for _ in range(len(row_headers))]
+    rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
+    ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
+
+    ### Get i.i.d. data for the environment
+    ### To do so, we sample uniformely in A a random action to tie with
+    ### a uniformely sampled state in S
+    n_samples = 50000
+
+    iid_actions = np.random.uniform(low=-1, high=1, size=(n_samples, act_dim))
+    iid_states = np.random.uniform(low=ss_min, high=ss_max, size=(n_samples, obs_dim))
+    iid_as = np.empty((n_samples, act_dim+obs_dim))
+    iid_as[:, :act_dim] = iid_actions
+    iid_as[:, act_dim:act_dim+obs_dim] = iid_states
+    
+    # for n in range(n_samples):
+    #     # ### reset env (is it really needed?)
+    #     # env.reset()
+    #     ### sample uniformely state s in S to be in
+    #     s = np.random.uniform(low=ss_min, high=ss_max, size=obs_dim)
+    #     iid_obs[n,:] = s
+    #     ### sample uniformely action a in A to perform
+    #     a = env.action_space.sample()
+    #     iid_act[n, :] = a
+    #     # ### set env state
+
+    #     # ### Act
+    #     # obs, _, _, _ = env.step(a)
+        
     ########################
     #### MAIN PLOT LOOP ####
     ########################
+    row_cpt = 0
     for init_episode in init_episodes:
         actions_mins = None
         actions_maxs = None
@@ -199,7 +239,13 @@ if __name__ == '__main__':
                 loc_obs_maxs = np.max(form_obs, axis=0)
                 obs_maxs = np.array([max(obs_maxs[idx], loc_obs_maxs[idx])
                                for idx in range(len(obs_mins))])
-                
+
+        #################################
+        #### FORMAT ALL ACT AND OBS #####
+        #################################        
+        print('###########################################################################')
+        print(f'Environment: {args.environment}')
+        col_cpt = 0
         for init_method in init_methods:
             actions = []
             observations = []
@@ -232,9 +278,29 @@ if __name__ == '__main__':
 
             all_actions.append(copy.copy(form_actions))
             all_observations.append(copy.copy(form_obs))
+            print(); print(f"Init method: {init_method}, total actions: {len(form_actions)}, total obs: {len(form_obs)}"); print()
+            if len(np.argwhere(np.isnan(form_actions))) > 0 and args.environment != 'fastsim_maze_traps':
+                print("WARNING: form actions contains NANs while it should not")
+            if len(np.argwhere(np.isnan(form_obs))) > 0 and args.environment != 'fastsim_maze_traps':
+                print("WARNING: form obs contains NANs while it should not")
 
+            ### Compute the jsd for the corresponding init method
+            ## For actions
+            js_a = JSdivergence(iid_actions, form_actions)
+            cell_text_js_a[row_cpt][col_cpt] = f"{round(js_a,1)}"
+            ## For states
+            js_s = JSdivergence(iid_states, form_obs)
+            cell_text_js_s[row_cpt][col_cpt] = f"{round(js_s,1)}"
+            ## For AxS
+            form_as = np.empty((len(form_actions), act_dim+obs_dim))
+            form_as[:,:act_dim] = form_actions
+            form_as[:,act_dim:act_dim+obs_dim] = form_obs
+            js_as = JSdivergence(iid_as, form_as)
+            cell_text_js_as[row_cpt][col_cpt] = f"{round(js_as,1)}"
+
+            col_cpt += 1
         ## Plot all on same plot
-
+        print('###########################################################################')
         ssr_vis.set_trajectories(all_actions)
 
         ## Ugly fix because the brownian motion rw is actually a urw and cnb0 is bm
@@ -245,18 +311,17 @@ if __name__ == '__main__':
             if init_methods[i] == 'colored-noise-beta-0':
                 init_methods[i] = 'brownian-motion'
                 continue
-
         fig_path = os.path.join(path, f'{args.environment}_repartition_actions_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='action',
-                           spe_fig_path=fig_path, legends=init_methods,
-                           mins=actions_mins, maxs=actions_maxs, plot_all=True)
+                           spe_fig_path=fig_path, legends=init_methods, plot_all=True)
+                           # mins=actions_mins, maxs=actions_maxs, plot_all=True)
 
         ssr_vis.set_trajectories(all_observations)
 
         fig_path = os.path.join(path, f'{args.environment}_repartition_obs_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='state',
-                           spe_fig_path=fig_path, legends=init_methods,
-                           mins=obs_mins, maxs=obs_maxs, plot_all=True)
+                           spe_fig_path=fig_path, legends=init_methods, plot_all=True)
+                           # mins=obs_mins, maxs=obs_maxs, plot_all=True)
 
         for i in range(len(init_methods)):
             if init_methods[i] == 'uniform-random-walk':
@@ -266,3 +331,61 @@ if __name__ == '__main__':
                 init_methods[i] = 'colored-noise-beta-0'
                 continue
 
+        row_cpt += 1
+
+    ## Plot JS divergence on actions
+    fig, ax = plt.subplots()
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+    the_table = plt.table(cellText=cell_text_js_a,
+                          rowLabels=row_headers,
+                          rowColours=rcolors,
+                          rowLoc='right',
+                          colColours=ccolors,
+                          colLabels=column_headers,
+                          loc='center')
+    fig.tight_layout()
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(10)
+    plt.title(f'Jensen Shannon divergence on action space between \n initialization methods data distributions and i.i.d. \n data distribution on {args.environment} environment', y=.7)
+    
+    plt.savefig(f"{args.environment}_jensen_shannon_divergence_action", dpi=300, bbox_inches='tight')
+
+    ## Plot JS divergence on states
+    fig, ax = plt.subplots()
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+    the_table = plt.table(cellText=cell_text_js_s,
+                          rowLabels=row_headers,
+                          rowColours=rcolors,
+                          rowLoc='right',
+                          colColours=ccolors,
+                          colLabels=column_headers,
+                          loc='center')
+    fig.tight_layout()
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(10)
+    plt.title(f'Jensen Shannon divergence on state space between \n initialization methods data distributions and i.i.d. \n data distribution on {args.environment} environment', y=.7)
+    
+    plt.savefig(f"{args.environment}_jensen_shannon_divergence_state", dpi=300, bbox_inches='tight')
+
+    ## Plot JS divergence on state x action
+    fig, ax = plt.subplots()
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+    the_table = plt.table(cellText=cell_text_js_as,
+                          rowLabels=row_headers,
+                          rowColours=rcolors,
+                          rowLoc='right',
+                          colColours=ccolors,
+                          colLabels=column_headers,
+                          loc='center')
+    fig.tight_layout()
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(10)
+    plt.title(f'Jensen Shannon divergence on state-action space between \n initialization methods data distributions and i.i.d. \n data distribution on {args.environment} environment', y=.7)
+    
+    plt.savefig(f"{args.environment}_jensen_shannon_divergence_state_action", dpi=300, bbox_inches='tight')

@@ -13,7 +13,6 @@ class Controller():
     def _process_params(self, params):
         if 'controller_params' in params:
             controller_params = params['controller_params']
-
             if 'controller_input_dim' in controller_params:
                 self.input_dim = controller_params['controller_input_dim']
             else:
@@ -23,6 +22,9 @@ class Controller():
                 self.output_dim = controller_params['controller_output_dim']
             else:
                 raise ValueError('Controller _process_params error: no value passed for controller_output_dim')            
+            if 'time_open_loop' in controller_params:
+                if controller_params['time_open_loop']:
+                    self.input_dim = 1
         else:
             raise Exception('Controller _process_params error: controller_params not in params')
 

@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 
 from model_init_study.visualization.visualization import VisualizationMethod
 from model_init_study.visualization.plot_utils import progress_bar
-    
+
+
 class StateSpaceRepartitionVisualization(VisualizationMethod):
     def __init__(self, params):
         super().__init__(params=params)
@@ -138,10 +139,28 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                 min_obs = mins
                 max_obs = maxs
             else:
-                # Get mins and maxs of obs for each dim
-                min_obs = np.min(trajectories, axis=0)
-                max_obs = np.max(trajectories, axis=0)
+                min_obs = None
+                max_obs = None
+                for i in range(len(trajectories)):
+                    if min_obs is None:
+                        min_obs = np.min(trajectories[i], axis=0)
+                    else:
+                        loc_min_obs = np.min(trajectories[i], axis=0)
+                        min_obs = np.array([min(min_obs[idx], loc_min_obs[idx])
+                                       for idx in range(len(min_obs))])
+                    if max_obs is None:
+                        max_obs = np.max(trajectories[i], axis=0)
+                    else:
+                        loc_max_obs = np.max(trajectories[i], axis=0)
+                        max_obs = np.array([max(max_obs[idx], loc_max_obs[idx])
+                                       for idx in range(len(min_obs))])
 
+                # try:
+                #     # Get mins and maxs of obs for each dim
+                #     min_obs = np.min(np.array(trajectories), axis=(0,1))
+                #     max_obs = np.max(np.array(trajectories), axis=(0,1))
+                # except Exception as e:
+                #     import pdb; pdb.set_trace()
             ## Careful need to do it dim by dim
             norm_trajs = [(trajectories[i] - min_obs)/ \
                           (max_obs - min_obs) for i in range(len(trajectories))]
@@ -156,12 +175,13 @@ class StateSpaceRepartitionVisualization(VisualizationMethod):
                 n, h_bins, patches = ax.hist([norm_trajs[i][:, dim]
                                               for i in range(len(norm_trajs))],
                                              bins=bins)
-
+                n_per_method = [sum(a) for a in n]
+                if n_per_method.count(n_per_method[0]) != len(n_per_method) and env_name != 'fastsim_maze_traps':
+                    print("WARNING: Total number of obs in bins isn't the same for all methods")
                 plt.title(f"Training data distribution for {dim_type} dimension {dim}")
                 plt.legend(legends, prop={'size': 10})
                 plt.xlabel("Min-max normalized value of state for data samples")
                 plt.ylabel("Number of data samples per bin")
-
                 if show:
                     plt.show()
 

@@ -103,6 +103,9 @@ if __name__ == '__main__':
 
     nreps = 1000
     nlags = round(min(10*np.log10(max_step), max_step - 1))
+    nlags = max_step - 1
+    step_size = .1
+    sigma_cnrw = .005
     
     params = \
     {
@@ -126,7 +129,7 @@ if __name__ == '__main__':
         'state_min': ss_min,
         'state_max': ss_max,
 
-        'step_size': 0.1,
+        'step_size': step_size, # for URW and CNRW
         'noise_beta': 2,
         
         'policy_param_init_min': -5,
@@ -141,117 +144,161 @@ if __name__ == '__main__':
     }
 
     ###### Simple test of each random walk ######
+
+    fig, axs = plt.subplots(2, 2)
+
+    ## Uniform Random Walk
+    urw = BrownianMotion(params)
+
+    axs[0,0].plot(range(max_step), urw.actions[0])
+
+    axs[0,0].set_title('Action value across time for Uniform Random Walk')
+
+    ## Colored Noise motion beta = 0 (Brownian Motion)
+    params['noise_beta'] = 0
+    cnm_0 = ColoredNoiseMotion(params)
+
+    axs[0,1].plot(range(max_step), cnm_0.actions[0])
+
+    axs[0,1].set_title('Action value across time for Colored Noise Motion \n ' \
+                       'with beta = 0 (Brownian Motion)')
+
+    ## Colored Noise motion beta = 1
+    params['noise_beta'] = 1
+    cnm_1 = ColoredNoiseMotion(params)
+
+    axs[1,0].plot(range(max_step), cnm_1.actions[0])
+
+    axs[1,0].set_title('Action value across time for Colored Noise Motion \n ' \
+                       'with beta = 1')
+
+    ## Colored Noise motion beta = 2
+    params['noise_beta'] = 2
+    cnm_2 = ColoredNoiseMotion(params)
+
+    axs[1,1].plot(range(max_step), cnm_2.actions[0])
+
+    axs[1,1].set_title('Action value across time for Colored Noise Motion \n ' \
+                       'with beta = 2')
+
+    plt.suptitle('Examples of RW in action space for different noise sequence generators')
     
-    ## Brownian Motion
-    bm = BrownianMotion(params)
-
-    plt.figure()
-
-    plt.plot(range(max_step), bm.actions[0])
-
-    plt.title('Action value across time for Brownian Motion')
-
-    ## Levy Flight
-    lf = LevyFlight(params)
-
-    plt.figure()
-
-    plt.plot(range(max_step), lf.actions[0])
-
-    plt.title('Action value across time for Levy Flight')
-
-    ## Colored Noise motion
-    cnm = ColoredNoiseMotion(params)
-
-    plt.figure()
-
-    plt.plot(range(max_step), cnm.actions[0])
-
-    plt.title('Action value across time for Colored Noise Motion')
-
-    # ## Plot correlogram for each random walk
-    
-    # plot_acf(bm.actions[0], title='Correlogram for Brownian Motion')
-    # plot_acf(cnm.actions[0], title='Correlogram for Colored Noise Motion')
-    # plot_acf(lf.actions[0], title='Correlogram for Levy Flight')
-
-    # plt.show()
-
     ###### Plot mean autocorrelation over a larger number of sampled action sequences ######
+    fig, axs = plt.subplots(2, 2)
+
+    urw_acf_res = np.empty((nreps, nlags+1))
+    cnm_0_acf_res = np.empty((nreps, nlags+1))
+    cnm_1_acf_res = np.empty((nreps, nlags+1))
+    cnm_2_acf_res = np.empty((nreps, nlags+1))
+
+    params['step_size'] = step_size
+    urw = BrownianMotion(params)
+    params['step_size'] = sigma_cnrw
+    params['noise_beta'] = 0
+    cnm_0 = ColoredNoiseMotion(params)
+    params['noise_beta'] = 1
+    cnm_1 = ColoredNoiseMotion(params)
+    params['noise_beta'] = 2
+    cnm_2 = ColoredNoiseMotion(params)
     
-    # bm_acf_res = np.empty((nreps, nlags))
-    # lf_acf_res = np.empty((nreps, nlags))
-    # cnm_acf_res = np.empty((nreps, nlags))
-    
-    # bm = BrownianMotion(params)
-    # lf = LevyFlight(params)
-    # # cnm = ColoredNoiseMotion(params)
+    for i in range(nreps):
+        urw_acf_res[i] = acf(urw.actions[i], nlags=nlags)
+        cnm_0_acf_res[i] = acf(cnm_0.actions[i], nlags=nlags)
+        cnm_1_acf_res[i] = acf(cnm_1.actions[i], nlags=nlags)
+        cnm_2_acf_res[i] = acf(cnm_2.actions[i], nlags=nlags)
 
-    # for i in range(nreps):
+    axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
 
-    #     bm_acf_res[i] = acf(bm.actions[i], nlags=nlags)
-    #     lf_acf_res[i] = acf(lf.actions[i], nlags=nlags)
-    #     # cnm_acf_res[i] = acf(cnm.actions[i], nlags=nlags)
+    axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
-    # plt.figure()
+    axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
 
-    # plt.plot(range(1, nlags+1), np.nanmean(bm_acf_res, axis=0))
+    axs[0,1].set_title('Correlogram for Colored Noise Motion with beta = 0 (Brownian Motion)')
 
-    # plt.title('Correlogram for Brownian Motion')
+    axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
 
-    # plt.figure()
+    axs[1,0].set_title('Correlogram for Colored Noise Motion with beta = 1')
 
-    # plt.plot(range(1, nlags+1), np.nanmean(lf_acf_res, axis=0))
+    axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
 
-    # plt.title('Correlogram for Levy Flight')
+    axs[1,1].set_title('Correlogram for Colored Noise Motion with beta = 2')
 
-    # # plt.figure()
-
-    # # plt.plot(range(1, nlags+1), np.nanmean(cnm_acf_res, axis=0))
-
-    # # plt.title('Correlogram for Colored Noise Motion')
-
-    # plt.show()
+    plt.suptitle('Correlograms of RW in action space for different noise sequence generators')
 
     ###### Plot mean autocorrelation over a larger number of sampled noise sequences ######
 
     params['n_init_episodes'] = 1
     params['action_dim'] = nreps
-    
-    bm_acf_res = np.empty((nreps, nlags+1))
-    lf_acf_res = np.empty((nreps, nlags+1))
-    cnm_acf_res = np.empty((nreps, nlags+1))
-    
-    bm = BrownianMotion(params)
-    lf = LevyFlight(params)
-    cnm = ColoredNoiseMotion(params)
 
-    bm_noise = bm.get_z()
-    lf_noise = np.array(lf.get_z())
-    cnm_noise = cnm.get_z()
+    urw_acf_res = np.empty((nreps, nlags+1))
+    cnm_0_acf_res = np.empty((nreps, nlags+1))
+    cnm_1_acf_res = np.empty((nreps, nlags+1))
+    cnm_2_acf_res = np.empty((nreps, nlags+1))
+
+    params['step_size'] = step_size
+    urw = BrownianMotion(params)
+    params['step_size'] = sigma_cnrw
+    params['noise_beta'] = 0
+    cnm_0 = ColoredNoiseMotion(params)
+    params['noise_beta'] = 1
+    cnm_1 = ColoredNoiseMotion(params)
+    params['noise_beta'] = 2
+    cnm_2 = ColoredNoiseMotion(params)
+    
+    urw_noise = urw.get_z()
+    cnm_noise_0 = cnm_0.get_z()
+    cnm_noise_1 = cnm_1.get_z()
+    cnm_noise_2 = cnm_2.get_z()
 
     for i in range(nreps):
-        print(nreps, i, len(bm_noise[:]), len(bm_noise))
-        bm_acf_res[i] = acf(bm_noise[:,i], nlags=nlags)
-        lf_acf_res[i] = acf(lf_noise[:,i], nlags=nlags)
-        cnm_acf_res[i] = acf(cnm_noise[:,i], nlags=nlags)
-        
-    plt.figure()
+        print(nreps, i, len(urw_noise[:]), len(urw_noise))
+        urw_acf_res[i] = acf(urw_noise[:,i], nlags=nlags)
+        cnm_0_acf_res[i] = acf(cnm_noise_0[:,i], nlags=nlags)
+        cnm_1_acf_res[i] = acf(cnm_noise_1[:,i], nlags=nlags)
+        cnm_2_acf_res[i] = acf(cnm_noise_2[:,i], nlags=nlags)
 
-    plt.plot(range(nlags+1), np.nanmean(bm_acf_res, axis=0))
+    fig, axs = plt.subplots(2, 2)
 
-    plt.title('Correlogram for White Noise')
+    axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
 
-    plt.figure()
+    axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
-    plt.plot(range(nlags+1), np.nanmean(lf_acf_res, axis=0))
+    axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
 
-    plt.title('Correlogram for Levy Distribution Noise')
+    axs[0,1].set_title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
 
-    plt.figure()
+    axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
 
-    plt.plot(range(nlags+1), np.nanmean(cnm_acf_res, axis=0))
+    axs[1,0].set_title('Correlogram for Colored Noise with beta = 1')
 
-    plt.title('Correlogram for Colored Noise')
+    axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+
+    axs[1,1].set_title('Correlogram for Colored Noise with beta = 2')
+
+    plt.suptitle('Correlograms for different noise sequence generators')
+    
+    # plt.figure()
+
+    # plt.plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
+
+    # plt.title('Correlogram for Uniform Random Walk')
+
+    # plt.figure()
+
+    # plt.plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
+
+    # plt.title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
+
+    # plt.figure()
+
+    # plt.plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
+
+    # plt.title('Correlogram for Colored Noise with beta = 1')
+
+    # plt.figure()
+
+    # plt.plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+
+    # plt.title('Correlogram for Colored Noise with beta = 2')
 
     plt.show()
