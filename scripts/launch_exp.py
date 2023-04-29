@@ -51,6 +51,7 @@ if __name__ == '__main__':
     import os
     import model_init_study
 
+    
     module_path = os.path.dirname(model_init_study.__file__)
     
     parser = argparse.ArgumentParser(description='Process run parameters.')
@@ -134,6 +135,23 @@ if __name__ == '__main__':
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
+    elif args.environment == 'cartpole' or args.environment == 'pusher' \
+       or args.environment == 'reacher':
+        from dmbrl.config import create_config
+        from dotmap import DotMap
+
+        env_name = args.environment
+        ctrl_args = []
+        overrides = []
+        logdir = args.dump_path
+
+        ctrl_type = 'MPC'
+        ctrl_args = DotMap(**{key: val for (key, val) in ctrl_args})
+
+        cfg = create_config(env_name, ctrl_type, ctrl_args, overrides, logdir)
+
+        env = cfg.ctrl_cfg.env
+
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
     
