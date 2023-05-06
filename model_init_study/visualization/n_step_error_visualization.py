@@ -11,16 +11,22 @@ class NStepErrorVisualization(VisualizationMethod):
         self._process_params(params)
         self._pred_error_thresh = .03 # 3 cm
         self._n = 1
+        self.ctrl_input = 'obs'
+        self.ctrl_type = 'nn'
         
     def _process_params(self, params):
         super()._process_params(params)
-        self.traj_separator = params['separator']()
+        if params['separator'] is not None:
+            self.traj_separator = params['separator']()
+        else:
+            self.traj_separator = None
         if 'path_to_test_trajectories' in params:
             self.test_trajectories = np.load(params['path_to_test_trajectories'])['examples']
             self.test_params = np.load(params['path_to_test_trajectories'])['params']
             ## /!\ Warning, trajs must be of shape (nb_of_trajs, nb_of_steps, state_dim)
         else:
-            raise Exception('TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
+            print('WARNING: TestTrajectoriesVisualization _process_params: path_to_test_trajectories not in params')
+            # raise Exception('TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
         if 'env_max_h' in params:
             self.env_max_h = params['env_max_h']
         else:
@@ -29,7 +35,9 @@ class NStepErrorVisualization(VisualizationMethod):
             ## Associate an instance of controller_type with given params
             self.controller = params['controller_type'](params=params)
         else:
-            raise Exception('ExplorationMethod _process_params error: controller_type not in params')
+            print('WARNING: TestTrajectoriesVisualization _process_params error: controller_type not in params')
+            print('WARNING: You have to set controller manually through NStepErrorVisualization.set_controller(controller)')
+            # raise Exception('ExplorationMethod _process_params error: controller_type not in params')
         if 'model' in params:
             self.model = params['model']
         else:
@@ -50,6 +58,12 @@ class NStepErrorVisualization(VisualizationMethod):
     def set_test_trajectories(self, test_trajectories):
         self.test_trajectories = test_trajectories
 
+    def set_controller(self, controller, actions_lists=None, ctrl_type='actions_list', ctrl_input='time'):
+        self.ctrl_type = ctrl_type
+        self.ctrl_input = ctrl_input
+        self.controller = controller
+        self.test_params = actions_lists
+    
     def set_n(self, n):
         self._n = n
         
@@ -69,12 +83,15 @@ class NStepErrorVisualization(VisualizationMethod):
         S = np.empty((len(self.test_trajectories), self._obs_dim))
         
         for i in range(len(self.test_trajectories)):
-            ## Create a copy of the controller
-            controller_list.append(self.controller.copy())
-            ## Set controller parameters
-            controller_list[-1].set_parameters(self.test_params[i])
-            # Init starting state
-            # S[i,:] = self.test_trajectories[i,0,:]
+            if self.ctrl_type == 'actions_list':
+                controller_list.append(self.test_params[i]) ## append act list
+            elif self.ctrl_type ==  'nn':
+                ## Create a copy of the controller
+                controller_list.append(self.controller.copy())
+                ## Set controller parameters
+                controller_list[-1].set_parameters(self.test_params[i])
+                # Init starting state
+                # S[i,:] = self.test_trajectories[i,0,:]
 
         loc_A = np.empty((len(self.test_trajectories), self._action_dim))
         loc_S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -84,7 +101,10 @@ class NStepErrorVisualization(VisualizationMethod):
         for i in range(self.env_max_h-self._n):
             for j in range(len(self.test_trajectories)):
                 S[j,:] = self.test_trajectories[j,i,:]
-                A[j,:] = controller_list[j](S[j,:])
+                if self.ctrl_type == 'actions_list':
+                    A[j,:] = controller_list[j][i]
+                elif self.ctrl_type ==  'nn':
+                    A[j,:] = controller_list[j](S[j,:])
                 if np.isnan(self.test_trajectories[j,i,:]).any():
                     ended[j] = True
 
@@ -100,7 +120,10 @@ class NStepErrorVisualization(VisualizationMethod):
             for k in range(self._n):
                 for j in range(len(self.test_trajectories)):
                     # loc_S[j,:] = self.test_trajectories[j,i,:]
-                    loc_A[j,:] = controller_list[j](loc_S[j,:])
+                    if self.ctrl_type == 'actions_list':
+                        loc_A[j,:] = controller_list[j][i+k]
+                    elif self.ctrl_type ==  'nn':
+                        loc_A[j,:] = controller_list[j](loc_S[j,:])
 
                 batch_pred_delta_ns, batch_disagreement = self.model.forward_multiple(loc_A,
                                                                                       loc_S,
@@ -112,8 +135,11 @@ class NStepErrorVisualization(VisualizationMethod):
                     mean_pred = [np.mean(next_step_pred[:,k])
                                  for k in range(len(next_step_pred[0]))]
                     loc_S[j,:] += mean_pred.copy()
-                    loc_d = np.mean(batch_disagreement[j].detach().numpy())
-                    cum_disagr[j] += np.mean(batch_disagreement[j].detach().numpy())
+                    if self.ctrl_type == 'nn':
+                        loc_d = np.mean(batch_disagreement[j].detach().numpy())
+                    else:
+                        loc_d = np.mean(batch_disagreement[j])
+                    cum_disagr[j] += loc_d
                     
             ## Now save the (cumulated) disagr and pred error values
             for j in range(len(self.test_trajectories)):
@@ -165,9 +191,10 @@ class NStepErrorVisualization(VisualizationMethod):
                                   dump_separate=dump_separate, show=show,
                                   model_trajs=(pred_trajs, disagrs, pred_errors),
                                   plot_stddev=plot_stddev)
-        
-        separated_trajs, labels = self.traj_separator.separate_trajs(pred_trajs)
-        test_separated_trajs, labels = self.traj_separator.separate_trajs(self.test_trajectories)
+
+        if self.traj_separator is not None:
+            separated_trajs, labels = self.traj_separator.separate_trajs(pred_trajs)
+            test_separated_trajs, labels = self.traj_separator.separate_trajs(self.test_trajectories)
         pred_errors = []
         for i in range(len(labels)):
             pred_errors.append(self.compute_pred_error(separated_trajs[i],
@@ -219,6 +246,7 @@ class NStepErrorVisualization(VisualizationMethod):
                 labels = ['Number of steps on environment',
                           # f'Trajectory on dimension {dim} on label {label}']
                           'Trajectory on dimension {} on label {}'.format(dim, label)]
+
                 limits = [0, len(pred_traj[:,dim]),
                           min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+pred_error[:, dim])),
                           max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+pred_error[:, dim]))]
