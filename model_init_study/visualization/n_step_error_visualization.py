@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import os
 import matplotlib.pyplot as plt
+import tqdm
 
 from model_init_study.visualization.visualization import VisualizationMethod
 
@@ -98,7 +99,9 @@ class NStepErrorVisualization(VisualizationMethod):
 
         ended = [False] * len(self.test_trajectories)
         
-        for i in range(self.env_max_h-self._n):
+        # for i in range(self.env_max_h-self._n):
+        for i in tqdm.tqdm(range(self.env_max_h-self._n),
+                           total=(self.env_max_h-self._n)):
             for j in range(len(self.test_trajectories)):
                 S[j,:] = self.test_trajectories[j,i,:]
                 if self.ctrl_type == 'actions_list':
