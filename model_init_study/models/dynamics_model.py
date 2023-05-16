@@ -173,7 +173,8 @@ class DynamicsModel():
             for name, value in zip(stats.keys(), stats.values()):
                 print(name, ": ", value)
             model_train_time = time.time() - start
-            print(f"Model train time: {model_train_time} seconds")
+            # print(f"Model train time: {model_train_time} seconds")
+            print("Model train time: {} seconds".format(model_train_time))
             print("=========================================\n")
             return stats
         

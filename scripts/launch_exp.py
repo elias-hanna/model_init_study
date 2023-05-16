@@ -27,6 +27,8 @@ if __name__ == '__main__':
         import TestTrajectoriesVisualization
     from model_init_study.visualization.n_step_error_visualization \
         import NStepErrorVisualization
+    from model_init_study.visualization.dynamics_visualization \
+        import DynamicsVisualization
 
     from model_init_study.visualization.fetch_pick_and_place_separator \
         import FetchPickAndPlaceSeparator
@@ -50,7 +52,7 @@ if __name__ == '__main__':
     import argparse
     import os
     import model_init_study
-
+    import types
     
     module_path = os.path.dirname(model_init_study.__file__)
     
@@ -94,7 +96,8 @@ if __name__ == '__main__':
         Initializer = ColoredNoiseMotion
         noise_beta = 2
     else:
-        raise Exception(f"Warning {args.init_method} isn't a valid initializer")
+        # raise Exception(f"Warning {args.init_method} isn't a valid initializer")
+        raise Exception("Warning {} isn't a valid initializer".format(args.init_method))
 
     env_register_id = 'BallInCup3d-v0'
     gym_args = {}
@@ -153,7 +156,8 @@ if __name__ == '__main__':
         env = cfg.ctrl_cfg.env
 
     else:
-        raise ValueError(f"{args.environment} is not a defined environment")
+        # raise ValueError(f"{args.environment} is not a defined environment")
+        raise ValueError("{} is not a defined environment".format(args.environment))
     
     
     # if args.environment == 'fetch_pick_and_place':
@@ -169,6 +173,7 @@ if __name__ == '__main__':
         
     env = gym.make(env_register_id, **gym_args)
 
+    
     try:
         max_step = env._max_episode_steps
     except:
@@ -245,6 +250,11 @@ if __name__ == '__main__':
 
         'env': env,
         'env_max_h': max_step,
+
+        ## Dynamics visualizer specific params
+        'sample_hor': 1,
+        'sample_budget': 100,
+        'num_cores': 10,
     }
     
     work_dir = os.getcwd()
@@ -302,7 +312,9 @@ if __name__ == '__main__':
 
     # work_dir = os.getcwd()
     # dump_dir = os.path.join(work_dir, args.dump_path)
-    wnb_path = os.path.join(dump_dir, f'{args.environment}_{args.init_method}_{args.init_episodes}_model_wnb.pt')
+
+    # wnb_path = os.path.join(dump_dir, f'{args.environment}_{args.init_method}_{args.init_episodes}_model_wnb.pt')
+    wnb_path = os.path.join(dump_dir, '{}_{}_{}_model_wnb.pt'.format(args.environment, args.init_method, args.init_episodes))
     dynamics_model.save(wnb_path)
 
     ## Just for test
@@ -313,6 +325,9 @@ if __name__ == '__main__':
     params['model'] = dynamics_model # to pass down to the visualizer routines
     test_traj_visualizer = TestTrajectoriesVisualization(params)
     n_step_visualizer = NStepErrorVisualization(params)
+    dynamics_visualizer = DynamicsVisualization(params)
+    # env.set_state = types.MethodType(env.env.set_state.__func__, env)
+    dynamics_visualizer.dump_plots(0)
 
     ## Visualize state space repartition (no need we plot it afterwards)
     # ssr_visualizer = StateSpaceRepartitionVisualization(params)
@@ -407,7 +422,8 @@ if __name__ == '__main__':
 
     data_path = os.path.join(
         args.dump_path,
-        f'{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
+        # f'{args.environment}_{args.init_method}_{args.init_episodes}_data.npz')
+        '{}_{}_{}_data.npz'.format(args.environment, args.init_method, args.init_episodes))
 
     
     np.savez(data_path,
@@ -438,7 +454,8 @@ if __name__ == '__main__':
              test_actions=test_actions,)
 
     print('\n###############################################################################\n')
-    print(f'Finished cleanly for {args.environment} environment with {args.init_method} init method and {args.init_episodes} episodes budget')
+    # print(f'Finished cleanly for {args.environment} environment with {args.init_method} init method and {args.init_episodes} episodes budget')
+    print('Finished cleanly for {} environment with {} init method and {} episodes budget'.format(args.environment, args.init_method, args.init_episodes))
     print('\n###############################################################################\n')
     
     exit(0)
