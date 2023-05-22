@@ -46,9 +46,7 @@ class DynamicsVisualization(VisualizationMethod):
                 ## Reset environment
                 env.reset()
                 qpos, qvel, s = env.sample_q_vectors()
-
                 env.set_state(qpos, qvel)
-
                 ns, r, done, info = env.step(a)
                 ## Add observed transition
                 transitions[-1].append((copy.copy(s),
@@ -146,7 +144,7 @@ class DynamicsVisualization(VisualizationMethod):
         results = pool.starmap(self.sample_per_action, args)
 
         # ## For debug
-        # results = sample_per_action(n_actions, self.action_sample_budget)
+        # results = self.sample_per_action(self.action_sample_budget, self.state_sample_budget)
 
 
         ## Regroup results from pool, still keep them per action
