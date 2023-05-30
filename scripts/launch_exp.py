@@ -127,6 +127,11 @@ if __name__ == '__main__':
         ss_min = -1
         ss_max = 1
         gym_args['dof'] = 100
+    elif args.environment == 'empty_maze':
+        env_register_id = 'FastsimEmptyMapNavigationPos-v0'
+        separator = FastsimSeparator
+        ss_min = -10
+        ss_max = 10
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
@@ -249,6 +254,7 @@ if __name__ == '__main__':
         'path_to_test_trajectories': path_to_examples,
 
         'env': env,
+        'env_name': args.environment,
         'env_max_h': max_step,
 
         ## Dynamics visualizer specific params
@@ -324,8 +330,10 @@ if __name__ == '__main__':
     
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
-    test_traj_visualizer = TestTrajectoriesVisualization(params)
-    n_step_visualizer = NStepErrorVisualization(params)
+
+    # test_traj_visualizer = TestTrajectoriesVisualization(params)
+    # n_step_visualizer = NStepErrorVisualization(params)
+
     dynamics_visualizer = DynamicsVisualization(params)
     # env.set_state = types.MethodType(env.env.set_state.__func__, env)
     dynamics_visualizer.dump_plots(0)

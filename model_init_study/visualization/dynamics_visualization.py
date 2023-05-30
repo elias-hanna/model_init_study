@@ -15,6 +15,7 @@ class DynamicsVisualization(VisualizationMethod):
     def _process_params(self, params):
         super()._process_params(params)
         self._env = params['env'] ## get the gym env
+        self._env_name = params['env_name'] ## get the gym env
         self.hor = params['sample_hor']
         self.state_sample_budget = params['state_sample_budget']
         self.action_sample_budget = params['action_sample_budget']
@@ -94,6 +95,19 @@ class DynamicsVisualization(VisualizationMethod):
                 s = ns
                 
         return transitions, deltas
+
+    def transition_postproc(transitions):
+        ## For all fastsim based envs
+        if 'maze' in self._env_name:
+            ## Change transitions to only take into account
+            ## vector between end point and starting point
+            ## independantly of robot orientation
+            ...
+
+            ## Compute delta s vector (only on delta X and delta V)
+        else:
+            proc_transitions = transitions
+        return proc_transitions, proc_deltas
     
     def dump_plots(self, curr_budget, itr=0, show=False):
         ## Create multiprocessing pool
@@ -156,6 +170,8 @@ class DynamicsVisualization(VisualizationMethod):
         for result in results[1:]:
             transitions += result[0]            
             deltas += result[1]
+
+        proc_transitions, proc_deltas = transition_postproc(transitions)
 
         transitions = np.array(transitions)
         deltas = np.array(deltas)
