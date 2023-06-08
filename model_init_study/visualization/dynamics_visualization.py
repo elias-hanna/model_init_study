@@ -43,6 +43,7 @@ class DynamicsVisualization(VisualizationMethod):
             deltas.append([])
             ## sample a single action
             a = env.action_space.sample()
+            a = np.clip(a, -1, 1)
             for j in range(n_samples):
                 ## Reset environment
                 env.reset()
@@ -96,15 +97,43 @@ class DynamicsVisualization(VisualizationMethod):
                 
         return transitions, deltas
 
-    def transition_postproc(transitions):
+    def transition_postproc(self, transitions):
+        proc_deltas = []
+        proc_transitions = []
         ## For all fastsim based envs
         if 'maze' in self._env_name:
             ## Change transitions to only take into account
             ## vector between end point and starting point
             ## independantly of robot orientation
-            ...
+            ## fastsim obs are: [pos_x, pos_y, vel_x, vel_y, sin(ori), cos(ori)]
 
-            ## Compute delta s vector (only on delta X and delta V)
+            ## Do pos_xy / vel_xy then - pos_xy / vel_xy start
+            for transition in transitions:
+                start = transition[0]
+                act = transition[1]
+                end = transition[2]
+                proc_delta = end[:4] - start[:4]
+                ## Compute or (atan2 of sin(ori) and cos(ori))
+                ori = np.arctan2(start[4], start[5])
+                ## Rx rotates around x axis to account for fastsim frame ori
+                Rx = np.array([[1, 0, 0],
+                               [0, np.cos(np.pi), -np.sin(np.pi)],
+                               [0, np.sin(np.pi), np.cos(np.pi)]])
+                ## Rz rotates around z axis to align with robot ori
+                Rz = np.array([[np.cos(ori), -np.sin(ori), 0],
+                               [np.sin(ori), np.cos(ori), 0],
+                               [0, 0, 1]])
+                ## Apply rotation matrix to [delta_pos_xy, delta_vel_xy] vector
+                to_rot = [0]*3
+                to_rot[:2] = proc_delta[:2]
+                proc_delta[:2] = Rx.T.dot(Rz.T.dot(to_rot))[:2]
+                to_rot[:2] = proc_delta[2:]
+                proc_delta[2:] = Rx.T.dot(Rz.T.dot(to_rot))[:2]
+                proc_deltas.append(proc_delta)
+                print(proc_delta)
+            
+            # import pdb; pdb.set_trace()
+            proc_transitions = transitions
         else:
             proc_transitions = transitions
         return proc_transitions, proc_deltas
@@ -171,24 +200,33 @@ class DynamicsVisualization(VisualizationMethod):
             transitions += result[0]            
             deltas += result[1]
 
-        proc_transitions, proc_deltas = transition_postproc(transitions)
+        proc_transitions = []
+        proc_deltas = []
+        for action_transitions in transitions:
+            proc_action_transitions, proc_action_deltas = \
+                self.transition_postproc(action_transitions)
+            proc_transitions.append(proc_action_transitions)
+            proc_deltas.append(proc_action_deltas)
 
         transitions = np.array(transitions)
         deltas = np.array(deltas)
+        transitions = np.array(proc_transitions)
+        deltas = np.array(proc_deltas)
 
         ## Sort per action vector norm (lowest to highest, reverse=False)
-        sorted_deltas = [x for _,x in sorted(zip(transitions,deltas),
-                                             key=lambda x:np.linalg.norm(x[0][0,1]))]
-        sorted_transitions = sorted(transitions,
-                                    key=lambda x:np.linalg.norm(x[0,1]))
+        # sorted_deltas = [x for _,x in sorted(zip(transitions,deltas),
+        #                                      key=lambda x:np.linalg.norm(x[0][0,1]))]
+        # sorted_transitions = sorted(transitions,
+        #                             key=lambda x:np.linalg.norm(x[0,1]))
         
-        ## Plot the deltas as boxplots
-        deltas = np.array(sorted_deltas)
-        transitions = np.array(sorted_transitions)
+        # ## Plot the deltas as boxplots
+        # deltas = np.array(sorted_deltas)
+        # transitions = np.array(sorted_transitions)
         ## iterate over state dim
+        import pdb; pdb.set_trace()
         for i in range(deltas.shape[2]):
             fig, ax = plt.subplots()
-            ax.boxplot(deltas[:,:,i])
+            ax.boxplot(deltas[:,:,i].T)
             plt.show()
 
         
