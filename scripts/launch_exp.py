@@ -259,8 +259,8 @@ if __name__ == '__main__':
 
         ## Dynamics visualizer specific params
         'sample_hor': 1,
-        'action_sample_budget': 100,
-        'state_sample_budget': 100,
+        'action_sample_budget': 10,
+        'state_sample_budget': 1000,
         'num_cores': 10,
     }
     

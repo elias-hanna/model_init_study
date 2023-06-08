@@ -200,6 +200,7 @@ class DynamicsVisualization(VisualizationMethod):
             transitions += result[0]            
             deltas += result[1]
 
+        ## Process transitions to reflect data symmetry / invariance
         proc_transitions = []
         proc_deltas = []
         for action_transitions in transitions:
@@ -210,8 +211,9 @@ class DynamicsVisualization(VisualizationMethod):
 
         transitions = np.array(transitions)
         deltas = np.array(deltas)
-        transitions = np.array(proc_transitions)
-        deltas = np.array(proc_deltas)
+        if 'maze' in self._env_name:
+            transitions = np.array(proc_transitions)
+            deltas = np.array(proc_deltas)
 
         ## Sort per action vector norm (lowest to highest, reverse=False)
         # sorted_deltas = [x for _,x in sorted(zip(transitions,deltas),
@@ -222,11 +224,19 @@ class DynamicsVisualization(VisualizationMethod):
         # ## Plot the deltas as boxplots
         # deltas = np.array(sorted_deltas)
         # transitions = np.array(sorted_transitions)
+
         ## iterate over state dim
         import pdb; pdb.set_trace()
         for i in range(deltas.shape[2]):
+            # fig, ax = plt.subplots()
+            # ## I don't get why I need to transpose, normally it takes columns
+            # ax.boxplot(deltas[:,:,i].T)
+            # plt.show()
             fig, ax = plt.subplots()
-            ax.boxplot(deltas[:,:,i].T)
+            to_plot = [deltas[j,:,i] for j in range(self.action_sample_budget)]
+            ## I don't get why I need to transpose, normally it takes columns
+            # ret_dict = ax.boxplot(to_plot, 0, '') ## options don't show outliers
+            ret_dict = ax.boxplot(to_plot) 
             plt.show()
 
         
