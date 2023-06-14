@@ -130,9 +130,7 @@ class DynamicsVisualization(VisualizationMethod):
                 to_rot[:2] = proc_delta[2:]
                 proc_delta[2:] = Rx.T.dot(Rz.T.dot(to_rot))[:2]
                 proc_deltas.append(proc_delta)
-                print(proc_delta)
             
-            # import pdb; pdb.set_trace()
             proc_transitions = transitions
         else:
             proc_transitions = transitions
@@ -225,8 +223,50 @@ class DynamicsVisualization(VisualizationMethod):
         # deltas = np.array(sorted_deltas)
         # transitions = np.array(sorted_transitions)
 
+        ## Compute JSD for each action transition distribution
+        ##  compared to median state transition
+        # medians_per_action = [np.median(deltas[i], axis=0)
+                              # for i in range(self.action_sample_budget)]
+        from jsd import JSdivergence
+        from scipy.spatial import distance
+        
+        divs_per_action = []
+        norm_divs_per_action = []
+        
+        # for i in range(self.action_sample_budget):
+        #     ## shape (1, d), d being dim of state transition
+        #     median = np.median(deltas[i], axis=0)
+        #     median_arr = np.reshape(median, (1, len(median)))
+        #     ## shape (state_sample_budget, d)
+        #     to_comp_arr = deltas[i]
+        #     ## Compute Jensen-Shannon divergence
+        #     div = JSdivergence(to_comp_arr, median_arr)
+        #     divs_per_action.append(div)
+        #     ## Min-Max Normalize data
+        #     mins = np.min(to_comp_arr, axis=0)
+        #     maxs = np.max(to_comp_arr, axis=0)
+        #     to_comp_arr = (to_comp_arr - mins) / (maxs - mins)
+        #     median_arr = (median_arr - mins) / (maxs - mins)
+        #     ## Compute Jensen-Shannon divergence on normalized data
+        #     norm_div = JSdivergence(to_comp_arr, median_arr)
+        #     norm_divs_per_action.append(norm_div)
+
+        #     ## Other way using scipy...
+        
+        #     ## This creates probability distributions but that should not
+        #     ## work for continuous data distributions...
+        #     import pdb; pdb.set_trace()
+
+        #     for i in range(self.action_sample_budget):
+                
+        #         if 'maze' in self._env_name:
+        #             bins = [10, 1, 1, 1]
+        #             bounds = [(), (), (), ()]
+        #         p = np.histogramdd(to_comp_arr, bins=10)[0] / len(to_comp_arr)
+        #         q = np.histogramdd(median_arr, bins=10)[0] / len(median_arr)
+        #         scipy_div = distance.jensenshannon(p, q)
+        
         ## iterate over state dim
-        import pdb; pdb.set_trace()
         for i in range(deltas.shape[2]):
             # fig, ax = plt.subplots()
             # ## I don't get why I need to transpose, normally it takes columns
@@ -234,12 +274,49 @@ class DynamicsVisualization(VisualizationMethod):
             # plt.show()
             fig, ax = plt.subplots()
             to_plot = [deltas[j,:,i] for j in range(self.action_sample_budget)]
+
             ## I don't get why I need to transpose, normally it takes columns
             # ret_dict = ax.boxplot(to_plot, 0, '') ## options don't show outliers
             ret_dict = ax.boxplot(to_plot) 
+
+            ax.set_xticklabels([f'action_{j}' for j in range(len(to_plot))])
+            ax.set_xlabel('Actions')
+            ax.set_ylabel(f'State variation')
+
+            plt.title(f'State variation along dimension {i} \n for a set of actions sampled uniformely in action-space')
+            fig.set_size_inches(10, 10)
+            plt.savefig(f'{self._env_name}_state_var_dim_{i}', dpi=300, bbox_inches='tight')
+
+            ## Other way using scipy...
+
+            ## This creates probability distributions but that should not
+            ## work for continuous data distributions...
+
+            
+            import pdb; pdb.set_trace()
+            for j in range(self.action_sample_budget):
+                bounds = (-1, 1)
+                ## shape (state_sample_budget, 1)
+                to_comp_arr = np.reshape(to_plot[j], (len(to_plot[j]), 1))
+                ## shape (1, 1)
+                median_arr = np.reshape(np.median(to_comp_arr), (1, 1))
+                p = np.histogram(to_comp_arr, bins=10, range=bounds)[0] / len(to_comp_arr)
+                q = np.histogram(median_arr, bins=10, range=bounds)[0] / len(median_arr)
+                scipy_div = distance.jensenshannon(p, q)
+        
             plt.show()
 
-        
+
+            
+        mean_div = np.mean(divs_per_action)
+        std_div = np.std(divs_per_action)
+        norm_mean_div = np.mean(norm_divs_per_action)
+        norm_std_div = np.std(norm_divs_per_action)
+
+        print(f"mean_div: {mean_div} | std_div: {std_div} ")
+        print(f"norm_mean_div: {norm_mean_div} | norm_std_div: {norm_std_div}")
+
+        exit(0)
         ## Faire sampling de 10000 etats
         ## faire sampling de même 1000 actions par etat
         ## comparer la distribution des transition entre chaque etat
@@ -253,15 +330,6 @@ class DynamicsVisualization(VisualizationMethod):
         ## autres methodes plus corrélé peuvent etre mieux si elles
         ## permettent de voir "plus" de la dynamique du systeme
         
-        ax.set_xlabel('')
-        ax.set_ylabel('State accross all environment')
-
-        plt.title('')
-        fig.set_size_inches(10, 10)
-        plt.legend()
-        plt.show()
-        
-        plt.savefig('', dpi=300, bbox_inches='tight')
         ## Format and save the data
         ## Compute median, 1st and 3rd quartile
         np.savez(...)
