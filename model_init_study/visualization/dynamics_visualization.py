@@ -265,7 +265,8 @@ class DynamicsVisualization(VisualizationMethod):
         #         p = np.histogramdd(to_comp_arr, bins=10)[0] / len(to_comp_arr)
         #         q = np.histogramdd(median_arr, bins=10)[0] / len(median_arr)
         #         scipy_div = distance.jensenshannon(p, q)
-        
+
+        scipy_divs_per_action = []
         ## iterate over state dim
         for i in range(deltas.shape[2]):
             # fig, ax = plt.subplots()
