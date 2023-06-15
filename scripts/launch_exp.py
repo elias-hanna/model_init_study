@@ -132,6 +132,16 @@ if __name__ == '__main__':
         separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
+    elif args.environment == 'dot_maze':
+        env_register_id = 'FastsimDotNavigationPos-v0'
+        separator = FastsimSeparator
+        ss_min = -10
+        ss_max = 10
+    elif args.environment == 'dot2_maze':
+        env_register_id = 'FastsimDot2NavigationPos-v0'
+        separator = FastsimSeparator
+        ss_min = -10
+        ss_max = 10
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
         separator = FastsimSeparator
@@ -259,7 +269,7 @@ if __name__ == '__main__':
 
         ## Dynamics visualizer specific params
         'sample_hor': 1,
-        'action_sample_budget': 10,
+        'action_sample_budget': 100,
         'state_sample_budget': 1000,
         'num_cores': 10,
     }

@@ -267,6 +267,7 @@ class DynamicsVisualization(VisualizationMethod):
         #         scipy_div = distance.jensenshannon(p, q)
 
         scipy_divs_per_action = []
+        scipy_divs_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
         ## iterate over state dim
         for i in range(deltas.shape[2]):
             # fig, ax = plt.subplots()
@@ -292,9 +293,8 @@ class DynamicsVisualization(VisualizationMethod):
 
             ## This creates probability distributions but that should not
             ## work for continuous data distributions...
-
+            ## Works if you discretize them, kinda meh but well...
             
-            import pdb; pdb.set_trace()
             for j in range(self.action_sample_budget):
                 bounds = (-1, 1)
                 ## shape (state_sample_budget, 1)
@@ -304,18 +304,22 @@ class DynamicsVisualization(VisualizationMethod):
                 p = np.histogram(to_comp_arr, bins=10, range=bounds)[0] / len(to_comp_arr)
                 q = np.histogram(median_arr, bins=10, range=bounds)[0] / len(median_arr)
                 scipy_div = distance.jensenshannon(p, q)
-        
-            plt.show()
+                scipy_divs_per_action[j, i] = scipy_div
 
+            print(f'JS divergences for dim {i}: {scipy_divs_per_action[:, i]}')
+                
+            # plt.show()
 
-            
         mean_div = np.mean(divs_per_action)
         std_div = np.std(divs_per_action)
         norm_mean_div = np.mean(norm_divs_per_action)
         norm_std_div = np.std(norm_divs_per_action)
+        scipy_mean_div = np.nanmean(scipy_divs_per_action, axis=0)
+        scipy_std_div = np.nanstd(scipy_divs_per_action, axis=0)
 
         print(f"mean_div: {mean_div} | std_div: {std_div} ")
         print(f"norm_mean_div: {norm_mean_div} | norm_std_div: {norm_std_div}")
+        print(f"scipy_mean_div: {scipy_mean_div} | scipy_std_div: {scipy_std_div}")
 
         exit(0)
         ## Faire sampling de 10000 etats
