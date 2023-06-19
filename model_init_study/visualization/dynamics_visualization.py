@@ -55,7 +55,6 @@ class DynamicsVisualization(VisualizationMethod):
                                         copy.copy(a),
                                         copy.copy(ns)))
                 deltas[-1].append(ns-s)
-                s = ns
                 
         return transitions, deltas
         
@@ -281,13 +280,13 @@ class DynamicsVisualization(VisualizationMethod):
             # ret_dict = ax.boxplot(to_plot, 0, '') ## options don't show outliers
             ret_dict = ax.boxplot(to_plot) 
 
-            ax.set_xticklabels([f'action_{j}' for j in range(len(to_plot))])
+            ax.set_xticklabels(['action_{}'.format(j) for j in range(len(to_plot))])
             ax.set_xlabel('Actions')
-            ax.set_ylabel(f'State variation')
+            ax.set_ylabel('State variation')
 
-            plt.title(f'State variation along dimension {i} \n for a set of actions sampled uniformely in action-space')
+            plt.title('State variation along dimension {} \n for a set of actions sampled uniformely in action-space'.format(i))
             fig.set_size_inches(10, 10)
-            plt.savefig(f'{self._env_name}_state_var_dim_{i}', dpi=300, bbox_inches='tight')
+            plt.savefig('{}_state_var_dim_{}'.format(self._env_name, i), dpi=300, bbox_inches='tight')
 
             ## Other way using scipy...
 
@@ -306,7 +305,7 @@ class DynamicsVisualization(VisualizationMethod):
                 scipy_div = distance.jensenshannon(p, q)
                 scipy_divs_per_action[j, i] = scipy_div
 
-            print(f'JS divergences for dim {i}: {scipy_divs_per_action[:, i]}')
+            print('JS divergences for dim {}: {}'.format(i, scipy_divs_per_action[:, i]))
                 
             # plt.show()
 
@@ -317,9 +316,9 @@ class DynamicsVisualization(VisualizationMethod):
         scipy_mean_div = np.nanmean(scipy_divs_per_action, axis=0)
         scipy_std_div = np.nanstd(scipy_divs_per_action, axis=0)
 
-        print(f"mean_div: {mean_div} | std_div: {std_div} ")
-        print(f"norm_mean_div: {norm_mean_div} | norm_std_div: {norm_std_div}")
-        print(f"scipy_mean_div: {scipy_mean_div} | scipy_std_div: {scipy_std_div}")
+        print("mean_div: {} | std_div: {} ".format(mean_div, std_div))
+        print("norm_mean_div: {} | norm_std_div: {}".format(norm_mean_div, norm_std_div))
+        print("scipy_mean_div: {} | scipy_std_div: {}".format(scipy_mean_div, scipy_std_div))
 
         exit(0)
         ## Faire sampling de 10000 etats
