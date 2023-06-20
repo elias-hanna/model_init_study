@@ -26,35 +26,35 @@ class NStepErrorVisualization(VisualizationMethod):
             self.test_params = np.load(params['path_to_test_trajectories'])['params']
             ## /!\ Warning, trajs must be of shape (nb_of_trajs, nb_of_steps, state_dim)
         else:
-            print('WARNING: TestTrajectoriesVisualization _process_params: path_to_test_trajectories not in params')
-            # raise Exception('TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
+            print('WARNING: NStepErrorVisualization _process_params: path_to_test_trajectories not in params')
+            # raise Exception('NStepErrorVisualization _process_params error: path_to_test_trajectories not in params')
         if 'env_max_h' in params:
             self.env_max_h = params['env_max_h']
         else:
-            raise Exception('TestTrajectoriesVisualization _process_params error: env_max_h not in params')
+            raise Exception('NStepErrorVisualization _process_params error: env_max_h not in params')
         if 'controller_type' in params:
             ## Associate an instance of controller_type with given params
             self.controller = params['controller_type'](params=params)
         else:
-            print('WARNING: TestTrajectoriesVisualization _process_params error: controller_type not in params')
+            print('WARNING: NStepErrorVisualization _process_params error: controller_type not in params')
             print('WARNING: You have to set controller manually through NStepErrorVisualization.set_controller(controller)')
             # raise Exception('ExplorationMethod _process_params error: controller_type not in params')
         if 'model' in params:
             self.model = params['model']
         else:
-            raise Exception('TestTrajectoriesVisualization _process_params error: model not in params')
+            raise Exception('NStepErrorVisualization _process_params error: model not in params')
         if 'dynamics_model_params' in params:
             dynamics_model_params = params['dynamics_model_params']
             if 'obs_dim' in dynamics_model_params:
                 self._obs_dim = dynamics_model_params['obs_dim']
             else:
-                raise Exception('TestTrajectoriesVisualization _process_params error: obs_dim not in params')
+                raise Exception('NStepErrorVisualization _process_params error: obs_dim not in params')
             if 'action_dim' in dynamics_model_params:
                 self._action_dim = dynamics_model_params['action_dim']
             else:
-                raise Exception('TestTrajectoriesVisualization _process_params error: action_dim not in params')
+                raise Exception('NStepErrorVisualization _process_params error: action_dim not in params')
         else:
-            raise Exception('TestTrajectoriesVisualization _process_params error: dynamics_model_params not in params')
+            raise Exception('NStepErrorVisualization _process_params error: dynamics_model_params not in params')
 
     def set_test_trajectories(self, test_trajectories):
         self.test_trajectories = test_trajectories

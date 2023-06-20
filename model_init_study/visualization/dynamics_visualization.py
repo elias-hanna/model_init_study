@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import multiprocessing
 from itertools import repeat
+import tqdm
 
 from model_init_study.visualization.visualization import VisualizationMethod
 
@@ -37,7 +38,8 @@ class DynamicsVisualization(VisualizationMethod):
         deltas = []
         obs_shape = env.observation_space.shape
 
-        for i in range(n_actions):
+        # for i in range(n_actions):
+        for i in tqdm.tqdm(range(n_actions), total=n_actions):
             ## Add a new array to record new transitions
             transitions.append([])
             deltas.append([])
@@ -181,6 +183,10 @@ class DynamicsVisualization(VisualizationMethod):
         args = zip(n_actions_samples_array,
                     repeat(self.state_sample_budget))
         
+        # results = []
+        # for result in tqdm.tqdm(pool.imap_unordered(self.sample_per_action, args), total=len(args[0])):
+            # results.append(result)
+            
         results = pool.starmap(self.sample_per_action, args)
 
         # ## For debug
@@ -286,7 +292,9 @@ class DynamicsVisualization(VisualizationMethod):
 
             plt.title('State variation along dimension {} \n for a set of actions sampled uniformely in action-space'.format(i))
             fig.set_size_inches(10, 10)
-            plt.savefig('{}_state_var_dim_{}'.format(self._env_name, i), dpi=300, bbox_inches='tight')
+            plt.savefig(os.path.join(self.dump_path,
+                                     '{}_state_var_dim_{}'.format(self._env_name, i)),
+                        dpi=300, bbox_inches='tight')
 
             ## Other way using scipy...
 
@@ -320,7 +328,6 @@ class DynamicsVisualization(VisualizationMethod):
         print("norm_mean_div: {} | norm_std_div: {}".format(norm_mean_div, norm_std_div))
         print("scipy_mean_div: {} | scipy_std_div: {}".format(scipy_mean_div, scipy_std_div))
 
-        exit(0)
         ## Faire sampling de 10000 etats
         ## faire sampling de même 1000 actions par etat
         ## comparer la distribution des transition entre chaque etat
@@ -336,4 +343,9 @@ class DynamicsVisualization(VisualizationMethod):
         
         ## Format and save the data
         ## Compute median, 1st and 3rd quartile
-        np.savez(...)
+        complete_dp = os.path.join(self.dump_path,
+                                   '{}_jsd_all_trans_vs_median.npz'.format(self._env_name))
+        np.savez(complete_dp,
+                 scipy_divs_per_action=scipy_divs_per_action,
+                 scipy_mean_div=scipy_mean_div,
+                 scipy_std_div=scipy_std_div)

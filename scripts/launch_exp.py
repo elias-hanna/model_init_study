@@ -70,6 +70,18 @@ if __name__ == '__main__':
 
     parser.add_argument('--environment', '-e', type=str, default='ball_in_cup')
 
+    parser.add_argument('--num-cores', type=int, default=10,
+                        help='number of cores to use for parallel computation')
+
+    parser.add_argument('--action-sample-budget', type=int, default=1000,
+                        help='Number of different action to sample')
+
+    parser.add_argument('--state-sample-budget', type=int, default=1000,
+                        help='Number of states to sample per action')
+
+    parser.add_argument('--dynamics-only', action="store_true",
+                        help='If on, will only compute dynamics uniformity')
+
     args = parser.parse_args()
 
     dynamics_model = DynamicsModel
@@ -269,9 +281,9 @@ if __name__ == '__main__':
 
         ## Dynamics visualizer specific params
         'sample_hor': 1,
-        'action_sample_budget': 100,
-        'state_sample_budget': 1000,
-        'num_cores': 10,
+        'action_sample_budget': args.action_sample_budget,
+        'state_sample_budget': args.state_sample_budget,
+        'num_cores': args.num_cores,
     }
     
     work_dir = os.getcwd()
@@ -341,12 +353,15 @@ if __name__ == '__main__':
     ## Execute each visualizer routines
     params['model'] = dynamics_model # to pass down to the visualizer routines
 
-    # test_traj_visualizer = TestTrajectoriesVisualization(params)
-    # n_step_visualizer = NStepErrorVisualization(params)
-
     dynamics_visualizer = DynamicsVisualization(params)
     # env.set_state = types.MethodType(env.env.set_state.__func__, env)
     dynamics_visualizer.dump_plots(0)
+
+    if args.dynamics_only:
+        exit(0)
+
+    test_traj_visualizer = TestTrajectoriesVisualization(params)
+    n_step_visualizer = NStepErrorVisualization(params)
 
     ## Visualize state space repartition (no need we plot it afterwards)
     # ssr_visualizer = StateSpaceRepartitionVisualization(params)

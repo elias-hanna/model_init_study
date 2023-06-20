@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import os
 import matplotlib.pyplot as plt
+import tqdm
 
 from model_init_study.visualization.visualization import VisualizationMethod
 
@@ -10,16 +11,21 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         super().__init__(params=params)
         self._process_params(params)
         self._pred_error_thresh = .03 # 3 cm
+        self._n = 1
+        self.ctrl_input = 'obs'
+        self.ctrl_type = 'nn'
         
     def _process_params(self, params):
         super()._process_params(params)
-        self.traj_separator = params['separator']()
+        if params['separator'] is not None:
+            self.traj_separator = params['separator']()
         if 'path_to_test_trajectories' in params:
             self.test_trajectories = np.load(params['path_to_test_trajectories'])['examples']
             self.test_params = np.load(params['path_to_test_trajectories'])['params']
             ## /!\ Warning, trajs must be of shape (nb_of_trajs, nb_of_steps, state_dim)
         else:
-            raise Exception('TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
+            # raise Exception('TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
+            print('WARNING: TestTrajectoriesVisualization _process_params error: path_to_test_trajectories not in params')
         if 'env_max_h' in params:
             self.env_max_h = params['env_max_h']
         else:
@@ -28,7 +34,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
             ## Associate an instance of controller_type with given params
             self.controller = params['controller_type'](params=params)
         else:
-            raise Exception('ExplorationMethod _process_params error: controller_type not in params')
+            # raise Exception('ExplorationMethod _process_params error: controller_type not in params')
+            print('WARNING: TestTrajectoriesVisualization _process_params error: controller_type not in params')
+            print('WARNING: You have to set controller manually through NStepErrorVisualization.set_controller(controller)')
         if 'model' in params:
             self.model = params['model']
         else:
@@ -48,7 +56,13 @@ class TestTrajectoriesVisualization(VisualizationMethod):
 
     def set_test_trajectories(self, test_trajectories):
         self.test_trajectories = test_trajectories
-        
+
+    def set_controller(self, controller, actions_lists=None, ctrl_type='actions_list', ctrl_input='time'):
+        self.ctrl_type = ctrl_type
+        self.ctrl_input = ctrl_input
+        self.controller = controller
+        self.test_params = actions_lists
+    
     def _execute_test_trajectories_on_model(self):
         controller_list = []
 
@@ -67,21 +81,29 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         S = np.empty((len(self.test_trajectories), self._obs_dim))
         
         for i in range(len(self.test_trajectories)):
-            ## Create a copy of the controller
-            controller_list.append(self.controller.copy())
-            ## Set controller parameters
-            controller_list[-1].set_parameters(self.test_params[i])
-            ## Init starting state
-            S[i,:] = self.test_trajectories[i,0,:]
+            if self.ctrl_type == 'actions_list':
+                controller_list.append(self.test_params[i]) ## append act list
+            elif self.ctrl_type ==  'nn':
+                ## Create a copy of the controller
+                controller_list.append(self.controller.copy())
+                ## Set controller parameters
+                controller_list[-1].set_parameters(self.test_params[i])
+                ## Init starting state
+                # S[i,:] = self.test_trajectories[i,0,:]
 
         ended = [False] * len(self.test_trajectories)
 
-        for i in range(self.env_max_h):
+        # for i in range(self.env_max_h-1):
+        for i in tqdm.tqdm(range(self.env_max_h-1), total=self.env_max_h-1):
             for j in range(len(self.test_trajectories)):
-                A[j,:] = controller_list[j](S[j,:])
+                S[j,:] = self.test_trajectories[j,i,:]
+                if self.ctrl_type == 'actions_list':
+                    A[j,:] = controller_list[j][i]
+                elif self.ctrl_type ==  'nn':
+                    A[j,:] = controller_list[j](S[j,:])
                 if np.isnan(self.test_trajectories[j,i,:]).any():
                     ended[j] = True
-
+                    
             if all(ended):
                 break
             
@@ -97,13 +119,12 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 pred_trajs[j,i,:] = S[j,:]
                 S[j,:] += mean_pred.copy()
                 # pred_trajs[j,i,:] = mean_pred.copy()
-                disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
+                if self.ctrl_type == 'nn':
+                    disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
+                else:
+                    disagrs[j,i] = np.mean(batch_disagreement[j])
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
-                # if has_nan[j] or np.isinf(pred_errors[j, i]) or np.isnan(pred_errors[j, i]):
-                    # has_nan[j] = True
-                    # pred_errors[j, i] = np.nan
-                # if pred_errors[j, i] > 20:
-                    # pred_errors[j, i] = 20
+
         return pred_trajs, disagrs, pred_errors
 
     def compute_pred_error(self, traj1, traj2):
@@ -163,12 +184,12 @@ class TestTrajectoriesVisualization(VisualizationMethod):
             # pred_trajs, disagrs, pred_errors = model_trajs
         pred_trajs, disagrs, pred_errors = model_trajs
         ## Make dump dirs
-        run_name = f'{env_name}_{init_name}_{num_episodes}'
-        fig_path = os.path.join(self.dump_path, f'{run_name}/disagr')
+        run_name = '{}_{}_{}'.format(env_name, init_name, num_episodes)
+        fig_path = os.path.join(self.dump_path, '{}/disagr'.format(run_name))
         os.makedirs(fig_path, exist_ok=True)
 
-        print(f'Current working dir: {os.getcwd()}')
-        print(f'Test trajectories vis dumping figs on {fig_path}')
+        print('Current working dir: {}'.format(os.getcwd()))
+        print('Test trajectories vis dumping figs on {}'.format(fig_path))
         
         ## Compute mean and stddev of trajs disagreement
         mean_disagr = np.nanmean(disagrs, axis=0)
@@ -194,9 +215,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                              mean_disagr+std_disagr,
                              facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean model ensemble disagreeement along {traj_type} trajectories \n{init_name} on {num_episodes} episodes\n{label}")
+        plt.title("Mean model ensemble disagreeement along {} trajectories \n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
         ## Save fig
-        plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_disagr_{traj_type}",
+        plt.savefig("{}/mean_test_trajectories_{}_disagr_{}".format(fig_path, label, traj_type),
                     bbox_inches='tight')
 
         if dump_separate:
@@ -213,13 +234,13 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Figure for model ensemble disagreement
                 plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
                 ## Set plot title
-                plt.title(f"Mean model ensemble disagreeement along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title("Mean model ensemble disagreeement along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_disagr_{traj_type}",
+                plt.savefig("{}/{}_test_trajectories_{}_disagr_{}".format(fig_path, i, label, traj_type),
                             bbox_inches='tight')
 
         ## Make dump dirs
-        fig_path = os.path.join(self.dump_path, f'{run_name}/pred_error')
+        fig_path = os.path.join(self.dump_path, '{}/pred_error'.format(run_name))
         os.makedirs(fig_path, exist_ok=True)        
             
         ## Create fig and ax
@@ -240,9 +261,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                              mean_pred_error+std_pred_error,
                              facecolor='green', alpha=0.5)
         ## Set plot title
-        plt.title(f"Mean prediction error along {traj_type} trajectories\n{init_name} on {num_episodes} episodes\n{label}")
+        plt.title("Mean prediction error along {} trajectories\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
         ## Save fig
-        plt.savefig(f"{fig_path}/mean_test_trajectories_{label}_pred_error_{traj_type}",
+        plt.savefig("{}/mean_test_trajectories_{}_pred_error_{}".format(fig_path, label, traj_type),
                     bbox_inches='tight')
 
         if dump_separate:
@@ -259,9 +280,9 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Figure for model ensemble disagreement
                 plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
                 ## Set plot title
-                plt.title(f"Mean prediction error along single {traj_type} trajectory\n{init_name} on {num_episodes} episodes\n{label}")
+                plt.title("Mean prediction error along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
                 ## Save fig
-                plt.savefig(f"{fig_path}/{i}_test_trajectories_{label}_pred_error_{traj_type}",
+                plt.savefig("{}/{}_test_trajectories_{}_pred_error_{}".format(fig_path, i, label, traj_type),
                             bbox_inches='tight')
 
         if show:
