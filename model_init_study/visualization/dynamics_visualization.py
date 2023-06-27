@@ -273,6 +273,9 @@ class DynamicsVisualization(VisualizationMethod):
 
         scipy_divs_per_action = []
         scipy_divs_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
+
+        d_mins = np.min(deltas, axis=(0,1))
+        d_maxs = np.max(deltas, axis=(0,1))
         ## iterate over state dim
         for i in range(deltas.shape[2]):
             # fig, ax = plt.subplots()
@@ -303,7 +306,8 @@ class DynamicsVisualization(VisualizationMethod):
             ## Works if you discretize them, kinda meh but well...
             
             for j in range(self.action_sample_budget):
-                bounds = (-1, 1)
+                # bounds = (-1, 1)
+                bounds = (d_mins[i], d_maxs[i])
                 ## shape (state_sample_budget, 1)
                 to_comp_arr = np.reshape(to_plot[j], (len(to_plot[j]), 1))
                 ## shape (1, 1)
