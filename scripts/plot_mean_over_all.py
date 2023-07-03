@@ -10,17 +10,6 @@ if __name__ == '__main__':
     from model_init_study.controller.nn_controller \
         import NeuralNetworkController
 
-    from model_init_study.visualization.fetch_pick_and_place_separator \
-        import FetchPickAndPlaceSeparator
-    from model_init_study.visualization.ant_separator \
-        import AntSeparator
-    from model_init_study.visualization.ball_in_cup_separator \
-        import BallInCupSeparator
-    from model_init_study.visualization.redundant_arm_separator \
-        import RedundantArmSeparator
-    from model_init_study.visualization.fastsim_separator \
-        import FastsimSeparator
-    
     # Env imports
     import gym
     import diversity_algorithms.environments.env_imports ## Contains deterministic ant + fetch
@@ -61,75 +50,75 @@ if __name__ == '__main__':
 
     env_register_id = 'BallInCup3d-v0'
     gym_args = {}
+    is_pets_env = False
     if args.environment == 'ball_in_cup':
         env_register_id = 'BallInCup3d-v0'
-        separator = BallInCupSeparator
         ss_min = -0.4
         ss_max = 0.4
     elif args.environment == 'redundant_arm':
         env_register_id = 'RedundantArmPos-v0'
-        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
     elif args.environment == 'redundant_arm_no_walls':
         env_register_id = 'RedundantArmPosNoWalls-v0'
-        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
     elif args.environment == 'redundant_arm_no_walls_no_collision':
         env_register_id = 'RedundantArmPosNoWallsNoCollision-v0'
-        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
     elif args.environment == 'redundant_arm_no_walls_limited_angles':
         env_register_id = 'RedundantArmPosNoWallsLimitedAngles-v0'
-        separator = RedundantArmSeparator
         ss_min = -1
         ss_max = 1
         gym_args['dof'] = 100
     elif args.environment == 'fastsim_maze':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
-        separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
     elif args.environment == 'fastsim_maze_traps':
         env_register_id = 'FastsimSimpleNavigationPos-v0'
-        separator = FastsimSeparator
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
     elif args.environment == 'fetch_pick_and_place':
         env_register_id = 'FetchPickAndPlaceDeterministic-v1'
-        separator = FetchPickAndPlaceSeparator
         ss_min = -1
         ss_max = 1
     elif args.environment == 'ant':
         env_register_id = 'AntBulletEnvDeterministicPos-v0'
-        separator = AntSeparator
+        ss_min = -10
+        ss_max = 10
+    elif args.environment == 'cartpole':
+        is_pets_env = True
+        max_step = 200
+        obs_dim = 4
+        act_dim = 1
         ss_min = -10
         ss_max = 10
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
-    
-    env = gym.make(env_register_id, **gym_args)
 
-    try:
-        max_step = env._max_episode_steps
-    except:
+    if not is_pets_env:
+        env = gym.make(env_register_id, **gym_args)
+
         try:
-            max_step = env.max_steps
+            max_step = env._max_episode_steps
         except:
-            raise AttributeError("Env does not allow access to _max_episode_steps or to max_steps")
+            try:
+                max_step = env.max_steps
+            except:
+                raise AttributeError("Env does not allow access to _max_episode_steps or to max_steps")
 
-    path_to_examples = os.path.join(module_path,
-                                    'examples/',
-                                    args.environment+'_example_trajectories.npz')
-    obs = env.reset()
-    if isinstance(obs, dict):
-        obs_dim = env.observation_space['observation'].shape[0]
-    else:
-        obs_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.shape[0]
+        path_to_examples = os.path.join(module_path,
+                                        'examples/',
+                                        args.environment+'_example_trajectories.npz')
+        obs = env.reset()
+        if isinstance(obs, dict):
+            obs_dim = env.observation_space['observation'].shape[0]
+        else:
+            obs_dim = env.observation_space.shape[0]
+        act_dim = env.action_space.shape[0]
 
     rep_folders = next(os.walk(f'.'))[1]
 
@@ -161,6 +150,14 @@ if __name__ == '__main__':
     example_1_step_disagrs = np.empty((n_total_trajs, task_h))
     example_1_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
 
+    ## Stores all pred errors
+    all_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes,
+                                                n_total_trajs, task_h, obs_dim))
+    norm_all_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes,
+                                                    n_total_trajs, task_h, obs_dim))
+    ## Stores normalized pred errors of each method and budget
+    norm_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes))
+    
     # example_5_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
     # example_5_step_disagrs = np.empty((n_total_trajs, task_h))
     # example_5_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
@@ -172,6 +169,8 @@ if __name__ == '__main__':
     example_20_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
     example_20_step_disagrs = np.empty((n_total_trajs, task_h))
     example_20_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
+
+    norm_example_20_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
 
     ## Do a new plot
     ## Will contain all means on a single plot
@@ -296,6 +295,10 @@ if __name__ == '__main__':
                                            rep_cpt*trajs_per_rep
                                            + trajs_per_rep] = rep_data['examples_1_step_pred_errors']
 
+                all_example_1_step_pred_errors[i,j, rep_cpt*trajs_per_rep:
+                                               rep_cpt*trajs_per_rep
+                                               + trajs_per_rep] = \
+                                        rep_data['examples_1_step_pred_errors']
                 # example_5_step_trajs[rep_cpt*trajs_per_rep:
                 #                      rep_cpt*trajs_per_rep
                 #                      + trajs_per_rep] = rep_data['examples_5_step_trajs']
@@ -316,18 +319,29 @@ if __name__ == '__main__':
                 #                            rep_cpt*trajs_per_rep
                 #                            + trajs_per_rep] = rep_data['examples_10_step_pred_errors']
 
-                example_20_step_trajs[rep_cpt*trajs_per_rep:
-                                     rep_cpt*trajs_per_rep
-                                     + trajs_per_rep] = rep_data['examples_20_step_trajs']
-                example_20_step_disagrs[rep_cpt*trajs_per_rep:
-                                       rep_cpt*trajs_per_rep
-                                       + trajs_per_rep] = rep_data['examples_20_step_disagrs']
-                example_20_step_pred_errors[rep_cpt*trajs_per_rep:
-                                           rep_cpt*trajs_per_rep
-                                           + trajs_per_rep] = rep_data['examples_20_step_pred_errors']
-
+                if not is_pets_env:
+                    example_20_step_trajs[rep_cpt*trajs_per_rep:
+                                          rep_cpt*trajs_per_rep
+                                          + trajs_per_rep] = rep_data['examples_20_step_trajs']
+                    example_20_step_disagrs[rep_cpt*trajs_per_rep:
+                                            rep_cpt*trajs_per_rep
+                                            + trajs_per_rep] = rep_data['examples_20_step_disagrs']
+                    example_20_step_pred_errors[rep_cpt*trajs_per_rep:
+                                                rep_cpt*trajs_per_rep
+                                                + trajs_per_rep] = rep_data['examples_20_step_pred_errors']
+                # else:
+                #     example_20_step_trajs[rep_cpt*trajs_per_rep:
+                #                           rep_cpt*trajs_per_rep
+                #                           + trajs_per_rep] = rep_data['examples_plan_h_step_trajs']
+                #     example_20_step_disagrs[rep_cpt*trajs_per_rep:
+                #                             rep_cpt*trajs_per_rep
+                #                             + trajs_per_rep] = rep_data['examples_plan_h_step_disagrs']
+                #     example_20_step_pred_errors[rep_cpt*trajs_per_rep:
+                #                                 rep_cpt*trajs_per_rep
+                #                                 + trajs_per_rep] = rep_data['examples_plan_h_step_pred_errors']
+                    
                 rep_cpt += 1
-
+            
             ## Mean pred error on full length recursive prediction on example trajs
             pred_error_vals = []
 
@@ -657,6 +671,7 @@ if __name__ == '__main__':
             mean_pred_errors[i, j, 1] = np.nanmean(np.absolute(example_20_step_pred_errors))
             std_pred_errors[i, j, 1] = np.nanstd(np.absolute(example_20_step_pred_errors))
             cell_text_20_step[j][i] = f"{round(mean_pred_errors[i,j,1],3)} \u00B1 {round(std_pred_errors[i,j,1],3)}"
+                
 
             # for r in range(trajs_per_rep):
             #     pred_trajs = example_20_step_trajs[r::2]
@@ -860,6 +875,20 @@ if __name__ == '__main__':
                                        # facecolor='green', alpha=0.5)
             ## init method = i; init episode = j
 
+        mins = np.nanmin(all_example_1_step_pred_errors, axis=(2,3))
+        maxs = np.nanmax(all_example_1_step_pred_errors, axis=(2,3))
+        norm_all_example_1_step_pred_errors = \
+            (all_example_1_step_pred_errors - mins)/(maxs - mins)
+
+        # for i in range(n_init_method):
+            # init_method =  init_methods[i]
+
+        norm_example_1_step_pred_errors = np.nanmean(norm_all_example_1_step_pred_errors,
+                                                     axis=(2,3))
+
+        ## NB: je retiens les mins/maxs, et ensuite je classe les erreurs de modele
+        import pdb; pdb.set_trace()
+        
         test_limits_disagr = [0, max_step,
                               0, args.disagr_plot_upper_lim]
         test_limits_pred_error = [0, max_step,
@@ -1001,6 +1030,14 @@ if __name__ == '__main__':
     ########################### below #############################
     ###############################################################
 
+    ## Dump the error table as a latex table
+
+    from table_latex_dump import dump_pred_error_latex_table
+
+    dump_pred_error_latex_table(mean_pred_errors, std_pred_errors,
+                                args.dump_path, env_name,
+                                init_methods, init_episodes, pred_steps)
+    
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)
     ax.axis('off')
