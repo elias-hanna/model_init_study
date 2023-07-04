@@ -234,6 +234,7 @@ class DynamicsVisualization(VisualizationMethod):
                               # for i in range(self.action_sample_budget)]
         from jsd import JSdivergence
         from scipy.spatial import distance
+        from scipy import stats
         
         divs_per_action = []
         norm_divs_per_action = []
@@ -271,8 +272,8 @@ class DynamicsVisualization(VisualizationMethod):
         #         q = np.histogramdd(median_arr, bins=10)[0] / len(median_arr)
         #         scipy_div = distance.jensenshannon(p, q)
 
-        scipy_divs_per_action = []
         scipy_divs_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
+        shapiro_per_action = np.empty((self.action_sample_budget, deltas.shape[2], 2))
 
         d_mins = np.min(deltas, axis=(0,1))
         d_maxs = np.max(deltas, axis=(0,1))
@@ -316,11 +317,28 @@ class DynamicsVisualization(VisualizationMethod):
                 q = np.histogram(median_arr, bins=10, range=bounds)[0] / len(median_arr)
                 scipy_div = distance.jensenshannon(p, q)
                 scipy_divs_per_action[j, i] = scipy_div
-
-            print('JS divergences for dim {}: {}'.format(i, scipy_divs_per_action[:, i]))
                 
+                ## shapiro wilk test for normality
+                test_stat, p_value = stats.shapiro(to_comp_arr)
+                shapiro_per_action[j, i, 0] = test_stat 
+                shapiro_per_action[j, i, 1] = p_value
+
+            print('MEAN JS divergences for dim {}: {}'.format(
+                i, np.mean(scipy_divs_per_action[:, i])))
+            print('STD JS divergences for dim {}: {}'.format(
+                i, np.std(scipy_divs_per_action[:, i])))
+            print('MEAN Shapiro test for dim {}: {}'.format(
+                i, np.mean(shapiro_per_action[:, i, 0])))
+            print('STD Shapiro test for dim {}: {}'.format(
+                i, np.std(shapiro_per_action[:, i, 0])))
+            print('MEAN Shapiro pvalue for dim {}: {}'.format(
+                i, np.mean(shapiro_per_action[:, i, 1])))
+            print('STD Shapiro pvalue for dim {}: {}'.format(
+                i, np.std(shapiro_per_action[:, i, 1])))
+            print('###################################################')
             # plt.show()
 
+        
         mean_div = np.mean(divs_per_action)
         std_div = np.std(divs_per_action)
         norm_mean_div = np.mean(norm_divs_per_action)
@@ -328,23 +346,25 @@ class DynamicsVisualization(VisualizationMethod):
         scipy_mean_div = np.nanmean(scipy_divs_per_action, axis=0)
         scipy_std_div = np.nanstd(scipy_divs_per_action, axis=0)
 
+        shapiro_mean_div = np.nanmean(shapiro_per_action, axis=(0,1))
+        shapiro_std_div = np.nanstd(shapiro_per_action, axis=(0,1))
+        shapiro_test_mean_div = shapiro_mean_div[0]
+        shapiro_test_std_div = shapiro_std_div[0]
+        shapiro_pvalue_mean_div = shapiro_mean_div[1]
+        shapiro_pvalue_std_div = shapiro_std_div[1]
+        
         print("mean_div: {} | std_div: {} ".format(mean_div, std_div))
         print("norm_mean_div: {} | norm_std_div: {}".format(norm_mean_div, norm_std_div))
         print("scipy_mean_div: {} | scipy_std_div: {}".format(scipy_mean_div, scipy_std_div))
-
-        ## Faire sampling de 10000 etats
-        ## faire sampling de même 1000 actions par etat
-        ## comparer la distribution des transition entre chaque etat
-        ## soit regarder par action ou avec toute les actions
-        ## Comparer similarité distribution de transition issu
-        ## de N etats + 1 action (la meme) à distribution uniforme
-        ## Si loin de distriubtion uniforme -> pas uniforme
-        ## Si proche -> uniforme
-        ## Si uniforme -> facile d'apprendre un modèle, RA suffisent
-        ## Si pas uniforme -> plus dur d'apprnedr eun modele,
-        ## autres methodes plus corrélé peuvent etre mieux si elles
-        ## permettent de voir "plus" de la dynamique du systeme
+        print("shapiro_test_mean_div: {} | shapiro_test_std_div: {}".format(shapiro_test_mean_div, shapiro_test_std_div))
+        print("shapiro_pvalue_mean_div: {} | shapiro_pvalue_std_div: {}".format(shapiro_pvalue_mean_div, shapiro_pvalue_std_div))
+        ## fit multivariate gaussian
+        ## then khi2 test to compare fitted multivariate to real data
+        ## have to bin all the data
+        ## if the multivariate is a good fit, means im pretty much gaussian
         
+        exit(0)
+
         ## Format and save the data
         ## Compute median, 1st and 3rd quartile
         complete_dp = os.path.join(self.dump_path,
