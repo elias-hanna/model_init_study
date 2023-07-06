@@ -2,7 +2,7 @@ import os
 
 def dump_pred_error_latex_table(mean_pred_errors, std_pred_errors, dump_path,
                                 env_name, init_methods, init_episodes,
-                                pred_steps):
+                                pred_steps, norm=False):
     ## mean_pred_errors and std_pred_errors have shape
     ## (n_init_methods, n_init_episodes, n_pred_steps)
     n_init_methods = mean_pred_errors.shape[0]
@@ -21,7 +21,10 @@ def dump_pred_error_latex_table(mean_pred_errors, std_pred_errors, dump_path,
     # |----------------------------------------------------------------------
 
     ## Open the file
-    filename = f'{env_name}_pred_error_table.txt'
+    if norm:
+        filename = f'{env_name}_norm_pred_error_table.txt'
+    else:
+        filename = f'{env_name}_pred_error_table.txt'
     filepath = os.path.join(dump_path, filename)
     f = open(filepath, "w", encoding='utf-8')
 
@@ -43,9 +46,9 @@ def dump_pred_error_latex_table(mean_pred_errors, std_pred_errors, dump_path,
         if name == 'random-actions': init_methods[idx] = 'RA';
         if name == 'random-policies': init_methods[idx] = 'RP';
         if 'colored' in name:
-            init_methods[idx] = 'CNRW_' + [int(s) for s in name.split()
-                                           if s.isdigit()]
-
+            init_methods[idx] = 'CNRW_' + ''.join([s for s in [*name]
+                                                   if s.isdigit()])
+            
     init_methods_names_str = ' '.join([f' & ${name}$' for name in init_methods])
 
     f.write('\t')
@@ -61,13 +64,16 @@ def dump_pred_error_latex_table(mean_pred_errors, std_pred_errors, dump_path,
         f.write('\n')
         ## For each prediction horizon
         for (pred_step, step_idx) in zip(pred_steps, range(n_pred_steps)):
-            to_write = [f'& {mean_pred_errors[init_idx][ep_idx][step_idx]}' +
+            to_write = [f'& {round(mean_pred_errors[init_idx][ep_idx][step_idx],2)}' +
                         r' $\pm$ ' +
-                        f'{std_pred_errors[init_idx][ep_idx][step_idx]}'
+                        f'{round(std_pred_errors[init_idx][ep_idx][step_idx],2)}'
                         for init_idx in range(n_init_methods)]
             to_write = ' '.join(to_write)
             to_write = f'& {pred_step} ' + to_write
-            to_write = to_write + r' \\\hline'
+            if step_idx == n_pred_steps -1:
+                to_write = to_write + r' \\\hline'
+            else:
+                to_write = to_write + r' \\\cline{2-' + str(2+n_init_methods) + r'}'
             f.write('\t')
             f.write(to_write)
             f.write('\n')

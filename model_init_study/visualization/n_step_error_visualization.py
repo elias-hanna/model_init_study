@@ -135,9 +135,13 @@ class NStepErrorVisualization(VisualizationMethod):
                 for j in range(len(self.test_trajectories)):
                     ## Compute mean prediction from model samples
                     next_step_pred = batch_pred_delta_ns[j]
-                    mean_pred = [np.mean(next_step_pred[:,k])
-                                 for k in range(len(next_step_pred[0]))]
-                    loc_S[j,:] += mean_pred.copy()
+                    mean_pred = np.mean(next_step_pred, axis=0)
+                    # mean_pred = [np.mean(next_step_pred[:,k])
+                                 # for k in range(len(next_step_pred[0]))]
+                    if self.env_name in ['cartpole', 'pusher', 'reacher']:
+                        loc_S[j,:] = mean_pred.copy()                        
+                    else:
+                        loc_S[j,:] += mean_pred.copy()
                     if self.ctrl_type == 'nn':
                         loc_d = np.mean(batch_disagreement[j].detach().numpy())
                     else:

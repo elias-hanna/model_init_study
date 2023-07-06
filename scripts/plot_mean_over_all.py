@@ -96,6 +96,20 @@ if __name__ == '__main__':
         act_dim = 1
         ss_min = -10
         ss_max = 10
+    elif args.environment == 'pusher':
+        is_pets_env = True
+        max_step = 150
+        obs_dim = 20
+        act_dim = 7
+        ss_min = -10
+        ss_max = 10
+    elif args.environment == 'reacher':
+        is_pets_env = True
+        max_step = 150
+        obs_dim = 17
+        act_dim = 7
+        ss_min = -10
+        ss_max = 10
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
 
@@ -151,12 +165,10 @@ if __name__ == '__main__':
     example_1_step_pred_errors = np.empty((n_total_trajs, task_h, obs_dim))
 
     ## Stores all pred errors
-    all_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes,
-                                                n_total_trajs, task_h, obs_dim))
-    norm_all_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes,
-                                                    n_total_trajs, task_h, obs_dim))
-    ## Stores normalized pred errors of each method and budget
-    norm_example_1_step_pred_errors = np.empty((n_init_method, n_init_episodes))
+    all_example_1_step_pred_errors = np.empty((n_init_method, n_total_trajs,
+                                               task_h, obs_dim))
+    norm_all_example_1_step_pred_errors = np.empty((n_init_method, n_total_trajs,
+                                                    task_h, obs_dim))
     
     # example_5_step_trajs = np.empty((n_total_trajs, task_h, obs_dim))
     # example_5_step_disagrs = np.empty((n_total_trajs, task_h))
@@ -241,6 +253,11 @@ if __name__ == '__main__':
     ## testing tho...)
     mean_pred_errors = np.zeros((n_init_method, n_init_episodes, len(pred_steps)))
     std_pred_errors = np.zeros((n_init_method, n_init_episodes, len(pred_steps)))
+    ## The mean pred errors are only computed on example trajectories! (we don't have the n step
+    ## average data for test trajectories, could add a database of test trajectories to do
+    ## testing tho...)
+    norm_mean_pred_errors = np.zeros((n_init_method, n_init_episodes, len(pred_steps)))
+    norm_std_pred_errors = np.zeros((n_init_method, n_init_episodes, len(pred_steps)))
     
     ## Plot table with mean prediction error for n step predictions    
     column_headers = [init_method for init_method in init_methods]
@@ -295,7 +312,7 @@ if __name__ == '__main__':
                                            rep_cpt*trajs_per_rep
                                            + trajs_per_rep] = rep_data['examples_1_step_pred_errors']
 
-                all_example_1_step_pred_errors[i,j, rep_cpt*trajs_per_rep:
+                all_example_1_step_pred_errors[i, rep_cpt*trajs_per_rep:
                                                rep_cpt*trajs_per_rep
                                                + trajs_per_rep] = \
                                         rep_data['examples_1_step_pred_errors']
@@ -329,16 +346,16 @@ if __name__ == '__main__':
                     example_20_step_pred_errors[rep_cpt*trajs_per_rep:
                                                 rep_cpt*trajs_per_rep
                                                 + trajs_per_rep] = rep_data['examples_20_step_pred_errors']
-                # else:
-                #     example_20_step_trajs[rep_cpt*trajs_per_rep:
-                #                           rep_cpt*trajs_per_rep
-                #                           + trajs_per_rep] = rep_data['examples_plan_h_step_trajs']
-                #     example_20_step_disagrs[rep_cpt*trajs_per_rep:
-                #                             rep_cpt*trajs_per_rep
-                #                             + trajs_per_rep] = rep_data['examples_plan_h_step_disagrs']
-                #     example_20_step_pred_errors[rep_cpt*trajs_per_rep:
-                #                                 rep_cpt*trajs_per_rep
-                #                                 + trajs_per_rep] = rep_data['examples_plan_h_step_pred_errors']
+                else:
+                    example_20_step_trajs[rep_cpt*trajs_per_rep:
+                                          rep_cpt*trajs_per_rep
+                                          + trajs_per_rep] = rep_data['examples_plan_h_step_trajs']
+                    example_20_step_disagrs[rep_cpt*trajs_per_rep:
+                                            rep_cpt*trajs_per_rep
+                                            + trajs_per_rep] = rep_data['examples_plan_h_step_disagrs']
+                    example_20_step_pred_errors[rep_cpt*trajs_per_rep:
+                                                rep_cpt*trajs_per_rep
+                                                + trajs_per_rep] = rep_data['examples_plan_h_step_pred_errors']
                     
                 rep_cpt += 1
             
@@ -875,8 +892,13 @@ if __name__ == '__main__':
                                        # facecolor='green', alpha=0.5)
             ## init method = i; init episode = j
 
-        mins = np.nanmin(all_example_1_step_pred_errors, axis=(2,3))
-        maxs = np.nanmax(all_example_1_step_pred_errors, axis=(2,3))
+        #########################################################################
+        ############################  WIP WIP WIP WIP ###########################
+        #########################################################################
+        ## All examples shape:
+        # (n_init_method, n_init_episodes, n_total_trajs, task_h, obs_dim)
+        mins = np.nanmin(all_example_1_step_pred_errors, axis=(0,1,2))
+        maxs = np.nanmax(all_example_1_step_pred_errors, axis=(0,1,2))
         norm_all_example_1_step_pred_errors = \
             (all_example_1_step_pred_errors - mins)/(maxs - mins)
 
@@ -884,10 +906,15 @@ if __name__ == '__main__':
             # init_method =  init_methods[i]
 
         norm_example_1_step_pred_errors = np.nanmean(norm_all_example_1_step_pred_errors,
-                                                     axis=(2,3))
-
+                                                     axis=(1,2))
+        norm_example_1_step_pred_errors = np.nanmean(norm_all_example_1_step_pred_errors,
+                                                     axis=(1,2))
+        for i in range(n_init_method):
+            norm_mean_pred_errors[i, j, 0] = \
+                np.nanmean(norm_all_example_1_step_pred_errors[i])
+            norm_std_pred_errors[i, j, 0] = \
+                np.nanstd(norm_all_example_1_step_pred_errors[i])
         ## NB: je retiens les mins/maxs, et ensuite je classe les erreurs de modele
-        import pdb; pdb.set_trace()
         
         test_limits_disagr = [0, max_step,
                               0, args.disagr_plot_upper_lim]
@@ -1037,6 +1064,10 @@ if __name__ == '__main__':
     dump_pred_error_latex_table(mean_pred_errors, std_pred_errors,
                                 args.dump_path, env_name,
                                 init_methods, init_episodes, pred_steps)
+
+    dump_pred_error_latex_table(norm_mean_pred_errors, norm_std_pred_errors,
+                                args.dump_path, env_name, init_methods,
+                                init_episodes, pred_steps, norm=True)
     
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)

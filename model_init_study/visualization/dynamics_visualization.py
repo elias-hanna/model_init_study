@@ -337,7 +337,6 @@ class DynamicsVisualization(VisualizationMethod):
                 i, np.std(shapiro_per_action[:, i, 1])))
             print('###################################################')
             # plt.show()
-
         
         mean_div = np.mean(divs_per_action)
         std_div = np.std(divs_per_action)
@@ -363,8 +362,6 @@ class DynamicsVisualization(VisualizationMethod):
         ## have to bin all the data
         ## if the multivariate is a good fit, means im pretty much gaussian
         
-        exit(0)
-
         ## Format and save the data
         ## Compute median, 1st and 3rd quartile
         complete_dp = os.path.join(self.dump_path,

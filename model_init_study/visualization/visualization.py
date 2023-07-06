@@ -8,6 +8,7 @@ class VisualizationMethod():
         self._process_params(params=params)
         
     def _process_params(self, params):
+        self.env_name = params['env_name']
         if 'dump_path' in params:
             self.dump_path = params['dump_path']
         else:

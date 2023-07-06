@@ -117,7 +117,11 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 next_step_pred = batch_pred_delta_ns[j]
                 mean_pred = [np.mean(next_step_pred[:,k]) for k in range(len(next_step_pred[0]))]
                 pred_trajs[j,i,:] = S[j,:]
-                S[j,:] += mean_pred.copy()
+
+                if self.env_name in ['cartpole', 'pusher', 'reacher']:
+                    S[j,:] = mean_pred.copy()
+                else:
+                    S[j,:] += mean_pred.copy()
                 # pred_trajs[j,i,:] = mean_pred.copy()
                 if self.ctrl_type == 'nn':
                     disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
