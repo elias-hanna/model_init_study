@@ -369,8 +369,15 @@ if __name__ == '__main__':
             # mean_pred_errors[i, j, 4] = np.nanmean(pred_error_vals)
             # std_pred_errors[i, j, 4] = np.nanstd(pred_error_vals)
 
-            mean_pred_errors[i, j, 2] = np.nanmean(np.absolute(pred_error_vals))
-            std_pred_errors[i, j, 2] = np.nanstd(np.absolute(pred_error_vals))
+
+            abs_full_pred_errors = np.absolute(pred_error_vals)
+            # abs_20_step_pred_errors = abs_20_step_pred_errors[abs_20_step_pred_errors < 20]
+            abs_full_pred_errors[abs_full_pred_errors > 100] = 100
+
+            # mean_pred_errors[i, j, 2] = np.nanmean(np.absolute(pred_error_vals))
+            # std_pred_errors[i, j, 2] = np.nanstd(np.absolute(pred_error_vals))
+            mean_pred_errors[i, j, 2] = np.nanmean(abs_full_pred_errors)
+            std_pred_errors[i, j, 2] = np.nanstd(abs_full_pred_errors)
 
             # cell_text[i][j] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
             cell_text_full[j][i] = f"{round(mean_pred_errors[i,j,2],1)} \u00B1 {round(std_pred_errors[i,j,2],1)}"
@@ -685,8 +692,14 @@ if __name__ == '__main__':
             # mean_pred_errors[i, j, 3] = np.nanmean(example_20_step_pred_errors)
             # std_pred_errors[i, j, 3] = np.nanstd(example_20_step_pred_errors)
 
-            mean_pred_errors[i, j, 1] = np.nanmean(np.absolute(example_20_step_pred_errors))
-            std_pred_errors[i, j, 1] = np.nanstd(np.absolute(example_20_step_pred_errors))
+            abs_20_step_pred_errors = np.absolute(example_20_step_pred_errors)
+            # abs_20_step_pred_errors = abs_20_step_pred_errors[abs_20_step_pred_errors < 20]
+            abs_20_step_pred_errors[abs_20_step_pred_errors > 100] = 100
+
+            # mean_pred_errors[i, j, 1] = np.nanmean(np.absolute(example_20_step_pred_errors))
+            # std_pred_errors[i, j, 1] = np.nanstd(np.absolute(example_20_step_pred_errors))
+            mean_pred_errors[i, j, 1] = np.nanmean(abs_20_step_pred_errors)
+            std_pred_errors[i, j, 1] = np.nanstd(abs_20_step_pred_errors)
             cell_text_20_step[j][i] = f"{round(mean_pred_errors[i,j,1],3)} \u00B1 {round(std_pred_errors[i,j,1],3)}"
                 
 
@@ -1038,18 +1051,12 @@ if __name__ == '__main__':
 
 
 
-
-
-
-
-
-
     ## Save aggregated data
-    np.savez("pred_error_data.npz",
+    np.savez(f"{env_name}_pred_error_data.npz",
              mean_pred_errors=mean_pred_errors,
              std_pred_errors=std_pred_errors)
 
-    print(f'Saved file pred_error_data.npz')
+    print(f'Saved file {env_name}_pred_error_data.npz')
 
     ###############################################################
     ###############################################################

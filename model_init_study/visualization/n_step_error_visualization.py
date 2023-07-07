@@ -79,6 +79,8 @@ class NStepErrorVisualization(VisualizationMethod):
         disagrs[:] = np.nan
         pred_errors = np.empty((len(self.test_trajectories), self.env_max_h, self._obs_dim))
         pred_errors[:] = np.nan
+        pred_errors_norm = np.empty((len(self.test_trajectories), self.env_max_h))
+        pred_errors_norm[:] = np.nan
         
         A = np.empty((len(self.test_trajectories), self._action_dim))
         S = np.empty((len(self.test_trajectories), self._obs_dim))
@@ -160,7 +162,7 @@ class NStepErrorVisualization(VisualizationMethod):
                     # pred_errors[j,i,dim] = np.linalg.norm(loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim])
                     ## Keep it signed
                     pred_errors[j,i,dim] = loc_S[j,dim]-self.test_trajectories[j,i+self._n,dim]
-            
+                pred_errors_norm[j,i] = np.linalg.norm(loc_S[j]-self.test_trajectories[j,i+self._n])
         pred_trajs = self.test_trajectories
         return pred_trajs, disagrs, pred_errors
 
@@ -221,105 +223,105 @@ class NStepErrorVisualization(VisualizationMethod):
         # else:
             # pred_trajs, disagrs, pred_errors = model_trajs
         pred_trajs, disagrs, pred_errors = model_trajs
-        ## Make dump dirs
-        # run_name = f'{env_name}_{init_name}_{num_episodes}'
-        # fig_path_disagr = os.path.join(self.dump_path, f'{run_name}/disagr')
-        run_name = '{}_{}_{}'.format(env_name, init_name, num_episodes)
-        fig_path_disagr = os.path.join(self.dump_path, '{}/disagr'.format(run_name))
-        os.makedirs(fig_path_disagr, exist_ok=True)
+        # ## Make dump dirs
+        # # run_name = f'{env_name}_{init_name}_{num_episodes}'
+        # # fig_path_disagr = os.path.join(self.dump_path, f'{run_name}/disagr')
+        # run_name = '{}_{}_{}'.format(env_name, init_name, num_episodes)
+        # fig_path_disagr = os.path.join(self.dump_path, '{}/disagr'.format(run_name))
+        # os.makedirs(fig_path_disagr, exist_ok=True)
 
-        # fig_path_pred_error = os.path.join(self.dump_path, f'{run_name}/pred_error')
-        fig_path_pred_error = os.path.join(self.dump_path, '{}/pred_error'.format(run_name))
-        os.makedirs(fig_path_pred_error, exist_ok=True)
+        # # fig_path_pred_error = os.path.join(self.dump_path, f'{run_name}/pred_error')
+        # fig_path_pred_error = os.path.join(self.dump_path, '{}/pred_error'.format(run_name))
+        # os.makedirs(fig_path_pred_error, exist_ok=True)
 
-        # print(f'Current working dir: {os.getcwd()}')
-        # print(f'{self._n} step error vis dumping figs on {fig_path_pred_error} and {fig_path_disagr}')
-        print('Current working dir: {}'.format(os.getcwd()))
-        print('{} step error vis dumping figs on {} and {}'.format(self._n, fig_path_pred_error, fig_path_disagr))
+        # # print(f'Current working dir: {os.getcwd()}')
+        # # print(f'{self._n} step error vis dumping figs on {fig_path_pred_error} and {fig_path_disagr}')
+        # print('Current working dir: {}'.format(os.getcwd()))
+        # print('{} step error vis dumping figs on {} and {}'.format(self._n, fig_path_pred_error, fig_path_disagr))
 
-        ## For each pred_traj (here == test trajs)
-        # for pred_traj in pred_trajs:
-        for i in range(len(pred_trajs)):
-            pred_traj = pred_trajs[i]
-            pred_error = pred_errors[i]
-            disagr = disagrs[i]
-            for dim in range(pred_traj.shape[1]):
-                ### Model prediction error ###
+        # ## For each pred_traj (here == test trajs)
+        # # for pred_traj in pred_trajs:
+        # for i in range(len(pred_trajs)):
+        #     pred_traj = pred_trajs[i]
+        #     pred_error = pred_errors[i]
+        #     disagr = disagrs[i]
+        #     for dim in range(pred_traj.shape[1]):
+        #         ### Model prediction error ###
 
-                ## Create fig and ax
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ## Prepare plot
-                labels = ['Number of steps on environment',
-                          # f'Trajectory on dimension {dim} on label {label}']
-                          'Trajectory on dimension {} on label {}'.format(dim, label)]
+        #         ## Create fig and ax
+        #         fig = plt.figure()
+        #         ax = fig.add_subplot(111)
+        #         ## Prepare plot
+        #         labels = ['Number of steps on environment',
+        #                   # f'Trajectory on dimension {dim} on label {label}']
+        #                   'Trajectory on dimension {} on label {}'.format(dim, label)]
 
-                limits = [0, len(pred_traj[:,dim]),
-                          min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+pred_error[:, dim])),
-                          max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+pred_error[:, dim]))]
+        #         limits = [0, len(pred_traj[:,dim]),
+        #                   min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+pred_error[:, dim])),
+        #                   max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+pred_error[:, dim]))]
 
-                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        #         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
-                ## Figure for model ensemble disagreement
-                plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+        #         ## Figure for model ensemble disagreement
+        #         plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
 
-                ## Add the lines for each pred error
-                for t in range(len(pred_traj)):
-                    x = [t, t]
-                    y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
-                    plt.plot(x, y, 'g')
+        #         ## Add the lines for each pred error
+        #         for t in range(len(pred_traj)):
+        #             x = [t, t]
+        #             y = [pred_traj[t, dim], pred_traj[t, dim] + pred_error[t, dim]]
+        #             plt.plot(x, y, 'g')
                 
-                ## Add the pred error for each step
-                # ## Set plot title
-                # plt.title(f"{self._n} step model ensemble prediction error along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
-                # ## Save fig
-                # fig_name = f"{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}"
-                # plt.savefig(f"{fig_path_pred_error}/{fig_name}", bbox_inches='tight')
-                ## Set plot title
-                plt.title("{} step model ensemble prediction error along {} trajectories on dimension {}\n{} on {} episodes\n{}".format(self._n, traj_type, dim, init_name, num_episodes, label))
-                ## Save fig
-                fig_name = "{}_{}_step_trajectories_{}_pred_error_{}_dim_{}".format(i, self._n, label, traj_type, dim)
-                plt.savefig("{}/{}".format(fig_path_pred_error, fig_name), bbox_inches='tight')
+        #         ## Add the pred error for each step
+        #         # ## Set plot title
+        #         # plt.title(f"{self._n} step model ensemble prediction error along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
+        #         # ## Save fig
+        #         # fig_name = f"{i}_{self._n}_step_trajectories_{label}_pred_error_{traj_type}_dim_{dim}"
+        #         # plt.savefig(f"{fig_path_pred_error}/{fig_name}", bbox_inches='tight')
+        #         ## Set plot title
+        #         plt.title("{} step model ensemble prediction error along {} trajectories on dimension {}\n{} on {} episodes\n{}".format(self._n, traj_type, dim, init_name, num_episodes, label))
+        #         ## Save fig
+        #         fig_name = "{}_{}_step_trajectories_{}_pred_error_{}_dim_{}".format(i, self._n, label, traj_type, dim)
+        #         plt.savefig("{}/{}".format(fig_path_pred_error, fig_name), bbox_inches='tight')
 
-                plt.close()
-                ### Model Ensemble Disagreement ###
+        #         plt.close()
+        #         ### Model Ensemble Disagreement ###
 
-                ## Create fig and ax
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ## Prepare plot
-                labels = ['Number of steps on environment',
-                          # f'Trajectory on dimension {dim} on label {label}']
-                          'Trajectory on dimension {} on label {}'.format(dim, label)]
-                limits = [0, len(pred_traj[:,dim]),
-                          min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+disagr[:])),
-                          max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+disagr[:]))]
-                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        #         ## Create fig and ax
+        #         fig = plt.figure()
+        #         ax = fig.add_subplot(111)
+        #         ## Prepare plot
+        #         labels = ['Number of steps on environment',
+        #                   # f'Trajectory on dimension {dim} on label {label}']
+        #                   'Trajectory on dimension {} on label {}'.format(dim, label)]
+        #         limits = [0, len(pred_traj[:,dim]),
+        #                   min(min(pred_traj[:, dim]), min(pred_traj[:, dim]+disagr[:])),
+        #                   max(max(pred_traj[:, dim]), max(pred_traj[:,dim]+disagr[:]))]
+        #         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
-                ## Figure for model ensemble disagreement
-                plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
+        #         ## Figure for model ensemble disagreement
+        #         plt.plot(range(len(pred_traj[:,dim])), pred_traj[:,dim], 'k-')
 
-                ## Add the lines for each pred error
-                for t in range(len(pred_traj)):
-                    x = [t, t]
-                    y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
-                    plt.plot(x, y, 'g')
+        #         ## Add the lines for each pred error
+        #         for t in range(len(pred_traj)):
+        #             x = [t, t]
+        #             y = [pred_traj[t, dim], pred_traj[t, dim]+disagr[t]]
+        #             plt.plot(x, y, 'g')
                     
-                ## Add the pred error for each step
-                ## Set plot title
-                # plt.title(f"{self._n} step model ensemble disagreement along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
-                # ## Save fig
-                # fig_name = f"{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}"
-                # plt.savefig(f"{fig_path_disagr}/{fig_name}", bbox_inches='tight')
-                plt.title("{} step model ensemble disagreement along {} trajectories on dimension {}\n{} on {} episodes\n{}".format(self._n, traj_type, dim, init_name, num_episodes, label))
-                ## Save fig
-                fig_name = "{}_{}_step_trajectories_{}_disagr_{}_dim_{}".format(i, self._n, label, traj_type, dim)
-                plt.savefig("{}/{}".format(fig_path_disagr, fig_name), bbox_inches='tight')
+        #         ## Add the pred error for each step
+        #         ## Set plot title
+        #         # plt.title(f"{self._n} step model ensemble disagreement along {traj_type} trajectories on dimension {dim}\n{init_name} on {num_episodes} episodes\n{label}")
+        #         # ## Save fig
+        #         # fig_name = f"{i}_{self._n}_step_trajectories_{label}_disagr_{traj_type}_dim_{dim}"
+        #         # plt.savefig(f"{fig_path_disagr}/{fig_name}", bbox_inches='tight')
+        #         plt.title("{} step model ensemble disagreement along {} trajectories on dimension {}\n{} on {} episodes\n{}".format(self._n, traj_type, dim, init_name, num_episodes, label))
+        #         ## Save fig
+        #         fig_name = "{}_{}_step_trajectories_{}_disagr_{}_dim_{}".format(i, self._n, label, traj_type, dim)
+        #         plt.savefig("{}/{}".format(fig_path_disagr, fig_name), bbox_inches='tight')
 
-                plt.close()
+        #         plt.close()
             
-        if show:
-            plt.show()
-        plt.close()
+        # if show:
+        #     plt.show()
+        # plt.close()
 
         return pred_trajs, disagrs, pred_errors

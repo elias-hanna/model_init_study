@@ -1,9 +1,11 @@
 def process_args(args):
     environments = args.environments
-    return environments
+    init_methods = args.init_methods
+    path_to_pred_error = args.path_to_pred_error
+    return environments, init_methods, path_to_pred_error
     
 def main(args):
-    environments = process_args(args)
+    environments, init_methods, path_to_pred_error = process_args(args)
 
     ## Get root working directory (from where py script is launched)
     root_wd = os.getcwd()
@@ -51,6 +53,9 @@ def main(args):
         envs_jsd_mean_divs[i] = np.nanmean(env_jsd_mean_divs)
         envs_jsd_std_divs[i] = np.nanmean(env_jsd_std_divs)
 
+        
+
+            
     ## Order the environments from most uniform to least uniform
     ## (from low to high jsd value)
     sorted_inds = envs_jsd_mean_divs.argsort()
@@ -70,10 +75,29 @@ def main(args):
     plt.title('Dynamics uniformity for various robotics and control environments', fontsize=20)
     plt.show()
     ## Save figure
-    
+    plt.savefig(f"environments_uniformity", dpi=300, bbox_inches='tight')
 
+    ## Plot pred error vs uniformity for EACH INIT METHOD
+    env_pred_errors = {}
+    if path_to_pred_error is not None:
+        ## Iterate over environments
+        for (i, env) in zip(range(len(environments)), environments):
+            ## load pred error data for each env
+            filename = os.path.join(path_to_pred_error, f'{env}_pred_error_data.npz')
+            pred_error_data = np.load(path_to_pred_error)
+            env_pred_errors[env_name] = pred_error_data['mean_pred_errors'] 
+    ## Iterate over init methods
+    for (i, init_method) in zip(range(len(init_methods)), init_methods):
+        fig, ax = plt.subplots()
+        mean_pred_errors = [env_pred_errors[env][i] for env in environments]
+        ticks = [i for i in range(len(environments))]
+        plt.xticks(ticks, environments)
+        ax.set_xlabel('Environments (from high to low uniformity)', fontsize=15)
+        ax.set_ylabel('Model prediction error', fontsize=15)
+        plt.title(f'Model prediction error depending on environment uniformity\nfor {init_method}', fontsize=20)
+        plt.show()
+        plt.savefig(f"{init_method}_pred_error_vs_uniformity")
         
-            
 if __name__ == '__main__':
     import numpy as np
     import os
@@ -84,6 +108,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process run parameters.')
 
     parser.add_argument('--environments', nargs="*", default=[])
+    parser.add_argument('--init-methods', nargs="*", default=[])
+    parser.add_argument('--path-to-pred-error', type=str, default=None)
 
     args = parser.parse_args()
     main(args)

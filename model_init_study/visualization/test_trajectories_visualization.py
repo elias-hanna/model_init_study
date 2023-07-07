@@ -89,14 +89,14 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 ## Set controller parameters
                 controller_list[-1].set_parameters(self.test_params[i])
                 ## Init starting state
-                # S[i,:] = self.test_trajectories[i,0,:]
+            S[i,:] = self.test_trajectories[i,0,:]
 
         ended = [False] * len(self.test_trajectories)
 
         # for i in range(self.env_max_h-1):
         for i in tqdm.tqdm(range(self.env_max_h-1), total=self.env_max_h-1):
             for j in range(len(self.test_trajectories)):
-                S[j,:] = self.test_trajectories[j,i,:]
+                # S[j,:] = self.test_trajectories[j,i,:]
                 if self.ctrl_type == 'actions_list':
                     A[j,:] = controller_list[j][i]
                 elif self.ctrl_type ==  'nn':

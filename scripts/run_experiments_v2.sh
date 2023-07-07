@@ -13,9 +13,10 @@ episodes=(5 10 20)
 methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-1 colored-noise-beta-2 random-policies)
 
 
-environments=(reacher pusher)
-pred_error_plot_upper_limits=(50 50) # warning needs to be in same order as envs
-disagr_plot_upper_limits=(50 50) # warning needs to be in same order as envs
+environments=(cartpole reacher pusher)
+# environments=(pusher)
+pred_error_plot_upper_limits=(5 5 5) # warning needs to be in same order as envs
+disagr_plot_upper_limits=(5 5 5) # warning needs to be in same order as envs
 
 episodes=(10)
 methods=(random-actions colored-noise-beta-0 colored-noise-beta-1 colored-noise-beta-2 random-policies)
