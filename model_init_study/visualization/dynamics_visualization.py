@@ -369,4 +369,8 @@ class DynamicsVisualization(VisualizationMethod):
         np.savez(complete_dp,
                  scipy_divs_per_action=scipy_divs_per_action,
                  scipy_mean_div=scipy_mean_div,
-                 scipy_std_div=scipy_std_div)
+                 scipy_std_div=scipy_std_div,
+                 shapiro_test_mean_div=shapiro_test_mean_div,
+                 shapiro_test_std_div=shapiro_test_std_div,
+                 shapiro_pvalue_mean_div=shapiro_pvalue_mean_div,
+                 shapiro_pvalue_std_div=shapiro_pvalue_std_div)
