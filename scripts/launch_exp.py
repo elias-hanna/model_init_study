@@ -324,12 +324,11 @@ if __name__ == '__main__':
         for j in range(traj_len):
             train_trajectories[i, j, :] = train_transitions[i][j][1]
 
-    ## Compute metric for env dynamics uniformity
-    dynamics_visualizer = DynamicsVisualization(params)
-    # env.set_state = types.MethodType(env.env.set_state.__func__, env)
-    dynamics_visualizer.dump_plots(0)
-
     if args.dynamics_only:
+        ## Compute metric for env dynamics uniformity
+        dynamics_visualizer = DynamicsVisualization(params)
+        # env.set_state = types.MethodType(env.env.set_state.__func__, env)
+        dynamics_visualizer.dump_plots(0)
         exit(0)
 
     ## Train the model

@@ -59,7 +59,37 @@ class DynamicsVisualization(VisualizationMethod):
                 deltas[-1].append(ns-s)
                 
         return transitions, deltas
-        
+
+    def sample_per_action_debug(self, n_samples):
+        '''
+        This method samples n_actions actions from the action space and for
+        each of the actions samples n_samples states from the state space and
+        perform the action in each of the sampled states.
+        Returns the observed transitions and corresponding state deltas
+        in a tab organized per action sampled
+        '''
+        env = copy.copy(self._env) ## copy gym env
+        transitions = []
+        deltas = []
+        obs_shape = env.observation_space.shape
+
+        ## sample a single action
+        a = env.action_space.sample()
+        a = np.clip(a, -1, 1)
+        for j in range(n_samples):
+            ## Reset environment
+            env.reset()
+            qpos, qvel, s = env.sample_q_vectors()
+            env.set_state(qpos, qvel)
+            ns, r, done, info = env.step(a)
+            ## Add observed transition
+            transitions.append((copy.copy(s),
+                                copy.copy(a),
+                                copy.copy(ns)))
+            deltas.append(ns-s)
+                
+        return [transitions], [deltas]
+    
     def sample(self, n_samples):
         '''
         This method samples n_samples state and actions from state-action space
@@ -175,23 +205,25 @@ class DynamicsVisualization(VisualizationMethod):
         ## Sample N actions, execute each action in M different states
 
         ## Create arrays to separate budget between jobs
-        samples_per_job = self.action_sample_budget//self.num_cores
-        remainder = self.action_sample_budget%self.num_cores
-        n_actions_samples_array = [samples_per_job]*self.num_cores
-        n_actions_samples_array[-1] += remainder
+        # samples_per_job = self.action_sample_budget//self.num_cores
+        # remainder = self.action_sample_budget%self.num_cores
+        # n_actions_samples_array = [samples_per_job]*self.num_cores
+        # n_actions_samples_array[-1] += remainder
         
-        args = zip(n_actions_samples_array,
-                    repeat(self.state_sample_budget))
+        # args = zip(n_actions_samples_array,
+        #             repeat(self.state_sample_budget))
         
         # results = []
         # for result in tqdm.tqdm(pool.imap_unordered(self.sample_per_action, args), total=len(args[0])):
             # results.append(result)
             
-        results = pool.starmap(self.sample_per_action, args)
+        # results = pool.starmap(self.sample_per_action, args)
+
+        results = pool.map(self.sample_per_action_debug,
+                           [self.state_sample_budget]*self.action_sample_budget)
 
         # ## For debug
         # results = self.sample_per_action(self.action_sample_budget, self.state_sample_budget)
-
 
         ## Regroup results from pool, still keep them per action
         # transitions = []
@@ -274,7 +306,9 @@ class DynamicsVisualization(VisualizationMethod):
 
         scipy_divs_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
         shapiro_per_action = np.empty((self.action_sample_budget, deltas.shape[2], 2))
-
+        cv_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
+        qcd_per_action = np.empty((self.action_sample_budget, deltas.shape[2]))
+        
         d_mins = np.min(deltas, axis=(0,1))
         d_maxs = np.max(deltas, axis=(0,1))
         ## iterate over state dim
@@ -307,17 +341,51 @@ class DynamicsVisualization(VisualizationMethod):
             ## Works if you discretize them, kinda meh but well...
             
             for j in range(self.action_sample_budget):
+                ## Get bounds for dim
                 # bounds = (-1, 1)
                 bounds = (d_mins[i], d_maxs[i])
-                ## shape (state_sample_budget, 1)
+                #########################################################
+                ############## JSD to median (consistency) ##############
+                #########################################################
+                # shape (state_sample_budget, 1): sampled deltas
                 to_comp_arr = np.reshape(to_plot[j], (len(to_plot[j]), 1))
-                ## shape (1, 1)
+                # shape (1, 1): median
                 median_arr = np.reshape(np.median(to_comp_arr), (1, 1))
-                p = np.histogram(to_comp_arr, bins=10, range=bounds)[0] / len(to_comp_arr)
-                q = np.histogram(median_arr, bins=10, range=bounds)[0] / len(median_arr)
+                # sampled deltas probability distribution
+                p = np.histogram(to_comp_arr, bins=100, range=bounds)[0] / len(to_comp_arr)
+                # median probability distribution (100% in median bin)
+                q = np.histogram(median_arr, bins=100, range=bounds)[0] / len(median_arr)
+                ## Compute JSD for given probability distributions
                 scipy_div = distance.jensenshannon(p, q)
-                scipy_divs_per_action[j, i] = scipy_div
-                
+                scipy_divs_per_action[j,i] = scipy_div
+                #########################################################
+                ############## Coefficient of variation #################
+                #########################################################
+                ## compute min and max of GIVEN distribution not overall
+                # ac_d_min = np.min(to_comp_arr); ac_d_max = np.max(to_comp_arr)
+                # normalized_to_comp_arr = (to_comp_arr - ac_d_min)/(ac_d_max-ac_d_min)
+                if d_mins[i] != d_maxs[i]:
+                    normalized_to_comp_arr = (to_comp_arr - d_mins[i])/(d_maxs[i]-d_mins[i])
+                else:
+                    normalized_to_comp_arr = to_comp_arr
+                # std = np.std(to_comp_arr)
+                # mean = np.mean(to_comp_arr)
+                std = np.std(normalized_to_comp_arr)
+                mean = np.mean(normalized_to_comp_arr)
+                cv_per_action[j,i] = std/np.abs(mean)
+                # if std/np.abs(mean) > 1:
+                    # import pdb; pdb.set_trace()
+                # print(std, mean, cv_per_action[j,i])
+                #########################################################
+                ############## Quartile coefficient of dispersion########
+                #########################################################
+                q1 = np.quantile(normalized_to_comp_arr, 1/4)
+                q3 = np.quantile(normalized_to_comp_arr, 3/4)
+                qcd_per_action[j,i] = (q3 - q1)/(q3 + q1)
+                # print(std, mean, cv_per_action[j,i])
+                #########################################################
+                ############## Shapiro test (normality)##################
+                #########################################################
                 ## shapiro wilk test for normality
                 test_stat, p_value = stats.shapiro(to_comp_arr)
                 shapiro_per_action[j, i, 0] = test_stat 
@@ -335,13 +403,21 @@ class DynamicsVisualization(VisualizationMethod):
                 i, np.mean(shapiro_per_action[:, i, 1])))
             print('STD Shapiro pvalue for dim {}: {}'.format(
                 i, np.std(shapiro_per_action[:, i, 1])))
+            print('MEAN Coefficient of variation for dim {}: {}'.format(
+                i, np.mean(cv_per_action[:, i])))
+            print('STD Coefficient of variation for dim {}: {}'.format(
+                i, np.std(cv_per_action[:, i])))
+            print('MEAN Quartile coefficient of dispersion for dim {}: {}'.format(
+                i, np.mean(qcd_per_action[:, i])))
+            print('STD Quartile coefficient of dispersion for dim {}: {}'.format(
+                i, np.std(qcd_per_action[:, i])))
             print('###################################################')
             # plt.show()
         
-        mean_div = np.mean(divs_per_action)
-        std_div = np.std(divs_per_action)
-        norm_mean_div = np.mean(norm_divs_per_action)
-        norm_std_div = np.std(norm_divs_per_action)
+        # mean_div = np.mean(divs_per_action)
+        # std_div = np.std(divs_per_action)
+        # norm_mean_div = np.mean(norm_divs_per_action)
+        # norm_std_div = np.std(norm_divs_per_action)
         scipy_mean_div = np.nanmean(scipy_divs_per_action, axis=0)
         scipy_std_div = np.nanstd(scipy_divs_per_action, axis=0)
 
@@ -351,12 +427,20 @@ class DynamicsVisualization(VisualizationMethod):
         shapiro_test_std_div = shapiro_std_div[0]
         shapiro_pvalue_mean_div = shapiro_mean_div[1]
         shapiro_pvalue_std_div = shapiro_std_div[1]
+
+        cv_mean = np.nanmean(cv_per_action, axis=0)
+        cv_std = np.nanstd(cv_per_action, axis=0)
+
+        qcd_mean = np.nanmean(qcd_per_action, axis=0)
+        qcd_std = np.nanstd(qcd_per_action, axis=0)
         
-        print("mean_div: {} | std_div: {} ".format(mean_div, std_div))
-        print("norm_mean_div: {} | norm_std_div: {}".format(norm_mean_div, norm_std_div))
+        # print("mean_div: {} | std_div: {} ".format(mean_div, std_div))
+        # print("norm_mean_div: {} | norm_std_div: {}".format(norm_mean_div, norm_std_div))
         print("scipy_mean_div: {} | scipy_std_div: {}".format(scipy_mean_div, scipy_std_div))
         print("shapiro_test_mean_div: {} | shapiro_test_std_div: {}".format(shapiro_test_mean_div, shapiro_test_std_div))
         print("shapiro_pvalue_mean_div: {} | shapiro_pvalue_std_div: {}".format(shapiro_pvalue_mean_div, shapiro_pvalue_std_div))
+        print("cv_mean: {} | cv_std: {}".format(cv_mean, cv_std))
+        print("qcd_mean: {} | qcd_std: {}".format(qcd_mean, qcd_std))
         ## fit multivariate gaussian
         ## then khi2 test to compare fitted multivariate to real data
         ## have to bin all the data
@@ -373,4 +457,8 @@ class DynamicsVisualization(VisualizationMethod):
                  shapiro_test_mean_div=shapiro_test_mean_div,
                  shapiro_test_std_div=shapiro_test_std_div,
                  shapiro_pvalue_mean_div=shapiro_pvalue_mean_div,
-                 shapiro_pvalue_std_div=shapiro_pvalue_std_div)
+                 shapiro_pvalue_std_div=shapiro_pvalue_std_div,
+                 cv_mean=cv_mean,
+                 cv_std=cv_std,
+                 qcd_mean=qcd_mean,
+                 qcd_std=qcd_std)
