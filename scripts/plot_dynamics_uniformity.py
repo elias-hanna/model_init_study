@@ -134,20 +134,23 @@ def main(args):
     # print(envs_qcd_mean)
     # print(envs_qcd_std)
 
+    uni_metric_mean = 1 - envs_cv_mean
+    uni_metric_std = envs_cv_std
     
     ## Plot boxplots of uniformity
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 4))
 
     x = [i for i in range(len(environments))]
     # ax.errorbar(x, envs_jsd_mean_divs, yerr=envs_jsd_std_divs, fmt='o', capsize=4)
-    ax.errorbar(x, envs_cv_mean, yerr=envs_cv_std, fmt='o', capsize=4)
+    # ax.errorbar(x, envs_cv_mean, yerr=envs_cv_std, fmt='o', capsize=4)
     # ax.errorbar(x, envs_qcd_mean, yerr=envs_qcd_std, fmt='o', capsize=4)
+    ax.errorbar(x, uni_metric_mean, yerr=uni_metric_std, fmt='o', capsize=4)
 
     plt.xticks(x, environments)
 
     ax.set_xlabel('Environments', fontsize=15)
-    ax.set_ylabel('Uniformity measure (0 to 1, lower is more uniform)', fontsize=15)
-    plt.title('Dynamics uniformity for various robotics and control environments', fontsize=20)
+    ax.set_ylabel('Uniformity measure', fontsize=15)
+    plt.title('Dynamics uniformity for various robotics environments', fontsize=20)
     # plt.show()
     ## Save figure
     plt.savefig(f"environments_uniformity", dpi=300, bbox_inches='tight')
@@ -166,26 +169,88 @@ def main(args):
             mean_pred_errors = ( mean_pred_errors - mean_pred_errors.min(axis=0) ) / \
                 ( mean_pred_errors.max(axis=0) - mean_pred_errors.min(axis=0) )
             env_pred_errors[env] = mean_pred_errors
+
+    ## Plot all errors vs uniformity on same plot
+    fig_all_1, ax_all_1 = plt.subplots(figsize=(7, 7))
+    fig_all_plan_h, ax_all_plan_h = plt.subplots(figsize=(7, 7))
+    fig_all_full, ax_all_full = plt.subplots(figsize=(7, 7))
+    cmap = plt.cm.get_cmap('hsv', len(init_methods)+1)
+    norm = mpl_colors.Normalize(vmin=0, vmax=len(init_methods)+1)
+
+    colors = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    ticks = [i for i in range(len(environments))]
+
+    fmts = ['o', 'v', '+', 'x', 's', 'd', '^']
     ## Iterate over init methods
     for (i, init_method) in zip(range(len(init_methods)), init_methods):
-        fig, ax = plt.subplots()
+        fig_1, ax_1 = plt.subplots(figsize=(7, 7))
+        fig_plan_h, ax_plan_h = plt.subplots(figsize=(7, 7))
+        fig_full, ax_full = plt.subplots(figsize=(7, 7))
         mean_pred_errors_1_step = [env_pred_errors[env][i][0] for env in environments]
         mean_pred_errors_plan_h = [env_pred_errors[env][i][1] for env in environments]
         mean_pred_errors_full = [env_pred_errors[env][i][2] for env in environments]
-        ax.errorbar(x, mean_pred_errors_1_step, fmt='o', capsize=4)
-        ticks = [i for i in range(len(environments))]
-        plt.xticks(ticks, environments)
-        ax.set_ylim(0,1)
-        ax.set_xlabel('Environments (from high to low uniformity)', fontsize=15)
-        ax.set_ylabel('Model prediction error', fontsize=15)
-        plt.title(f'Model prediction error depending on environment uniformity\nfor {init_method}', fontsize=20)
-        # plt.show()
-        plt.savefig(f"{init_method}_pred_error_vs_uniformity")
+        ax_1.errorbar(x, mean_pred_errors_1_step, fmt='+',
+                      markersize=12, markeredgewidth=5)
+        ax_plan_h.errorbar(x, mean_pred_errors_plan_h, fmt='+',
+                           markersize=12, markeredgewidth=5)
+        ax_full.errorbar(x, mean_pred_errors_full, fmt='+',
+                         markersize=12, markeredgewidth=5)
+        ax_all_1.errorbar(x, mean_pred_errors_1_step, fmt=fmts[i],
+                          markersize=12, markeredgewidth=5,
+                          markeredgecolor=colors.to_rgba(i),
+                          markerfacecolor=colors.to_rgba(i),
+                          label=init_method, alpha=0.4)
+        ax_all_plan_h.errorbar(x, mean_pred_errors_plan_h, fmt=fmts[i],
+                               markersize=12, markeredgewidth=5,
+                               markeredgecolor=colors.to_rgba(i),
+                               markerfacecolor=colors.to_rgba(i),
+                               label=init_method, alpha=0.4)
+        ax_all_full.errorbar(x, mean_pred_errors_full, fmt=fmts[i],
+                             markersize=12, markeredgewidth=5,
+                             markeredgecolor=colors.to_rgba(i),
+                             markerfacecolor=colors.to_rgba(i),
+                             label=init_method, alpha=0.4)
+
+        prepare_plot(ax_1, fig_1, '1-step', ticks,
+                     environments, init_method)
+        prepare_plot(ax_plan_h, fig_plan_h, '25-step', ticks,
+                     environments, init_method)
+        prepare_plot(ax_full, fig_full, 'H-step', ticks,
+                     environments, init_method)
+
+        fig_1.savefig(f"{init_method}_pred_error_vs_uniformity_1_step")
+        fig_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h")
+        fig_full.savefig(f"{init_method}_pred_error_vs_uniformity_full")
+
+    prepare_plot(ax_all_1, fig_all_1, '1-step', ticks,
+                 environments, 'all init_methods')
+    prepare_plot(ax_all_plan_h, fig_all_plan_h, '25-step', ticks,
+                 environments, 'all init_methods')
+    prepare_plot(ax_all_full, fig_all_full, 'H-step', ticks,
+                 environments, 'all init_methods')
+
+    ax_all_1.legend(prop={'size': 10})
+    ax_all_plan_h.legend(prop={'size': 10})
+    ax_all_full.legend(prop={'size': 10})
+    fig_all_1.savefig(f"{init_method}_pred_error_vs_uniformity_1_step_all")
+    fig_all_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h_all")
+    fig_all_full.savefig(f"{init_method}_pred_error_vs_uniformity_full_all")
         
+def prepare_plot(ax, fig, h, ticks, environments, init_method):
+    ax.set_xticks(ticks, environments, fontsize=15)
+    ax.set_ylim(0,1)
+    ax.set_xlabel('Environments (from high to low uniformity)', fontsize=15)
+    ax.set_ylabel('Model prediction error', fontsize=15)
+    ax.set_title(f'{h} model prediction error depending on \n'\
+                 f'environment uniformity for {init_method}', fontsize=20)
+
 if __name__ == '__main__':
     import numpy as np
     import os
     import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    import matplotlib.colors as mpl_colors
     
     import argparse
     
