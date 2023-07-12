@@ -123,10 +123,11 @@ class TestTrajectoriesVisualization(VisualizationMethod):
                 else:
                     S[j,:] += mean_pred.copy()
                 # pred_trajs[j,i,:] = mean_pred.copy()
-                if self.ctrl_type == 'nn':
-                    disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
-                else:
-                    disagrs[j,i] = np.mean(batch_disagreement[j])
+                # if self.ctrl_type == 'nn':
+                    ## DO THIS WHEN TENSORS rets (legacy MIS)
+                    # disagrs[j,i] = np.mean(batch_disagreement[j].detach().numpy())
+                # else:
+                disagrs[j,i] = np.mean(batch_disagreement[j])
                 pred_errors[j,i] = np.linalg.norm(S[j,:]-self.test_trajectories[j,i,:])
 
         return pred_trajs, disagrs, pred_errors

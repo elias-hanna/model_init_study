@@ -45,12 +45,22 @@ class FormalizedInitializer(Initializer):
     def _gen_action_sequence(self, idx):
         ## /!\ z is a tab ##
         self.z = self.get_z() ## zs are mutable over iterations
+            
         self.z = np.clip(self.z, self._action_min, self._action_max)
         loc_actions = []
         for t in range(self._env_max_h):
             loc_alpha_z = [self._action_init + self.alpha[i,t]*self.z[i]
                            for i in range(self._env_max_h)]
-            action = sum(loc_alpha_z[:t+1])
+            actions = [self._action_init]
+            for i in range(t):
+                actions.append(actions[-1]+loc_alpha_z[i][0])
+                if actions[-1] > self._action_max:
+                    actions[-1] = self._action_max
+                elif actions[-1] < self._action_min:
+                    actions[-1] = self._action_min
+
+            action = actions[-1]
+            # action = sum(loc_alpha_z[:t+1])
             loc_actions.append(action)
         loc_actions = np.clip(loc_actions, self._action_min, self._action_max)
         return loc_actions
@@ -82,6 +92,7 @@ class FormalizedInitializer(Initializer):
 if __name__ == '__main__':
     from brownian_motion import BrownianMotion
     from levy_flight import LevyFlight
+    from random_actions_initializer import RandomActionsInitializer
     from colored_noise_motion import ColoredNoiseMotion
     from statsmodels.graphics.tsaplots import plot_acf
     from statsmodels.tsa.stattools import acf
@@ -103,7 +114,7 @@ if __name__ == '__main__':
 
     nreps = 1000
     nlags = round(min(10*np.log10(max_step), max_step - 1))
-    nlags = max_step - 1
+    # nlags = max_step - 1
     step_size = .1
     sigma_cnrw = .005
     
@@ -147,12 +158,19 @@ if __name__ == '__main__':
 
     fig, axs = plt.subplots(2, 2)
 
-    ## Uniform Random Walk
-    urw = BrownianMotion(params)
+    # ## Uniform Random Walk
+    # urw = BrownianMotion(params)
 
-    axs[0,0].plot(range(max_step), urw.actions[0])
+    # axs[0,0].plot(range(max_step), urw.actions[0])
 
-    axs[0,0].set_title('Action value across time for Uniform Random Walk')
+    # axs[0,0].set_title('Action value across time for Uniform Random Walk')
+
+    ## Random Actions
+    ra = RandomActionsInitializer(params)
+
+    axs[0,0].plot(range(max_step), ra.actions[0])
+
+    axs[0,0].set_title('Action value across time for Random Actions')
 
     ## Colored Noise motion beta = 0 (Brownian Motion)
     params['noise_beta'] = 0
@@ -181,18 +199,23 @@ if __name__ == '__main__':
     axs[1,1].set_title('Action value across time for Colored Noise Motion \n ' \
                        'with beta = 2')
 
+    plt.xlabel('Timestep')
+    plt.ylabel('Action Value')
+
     plt.suptitle('Examples of RW in action space for different noise sequence generators')
     
     ###### Plot mean autocorrelation over a larger number of sampled action sequences ######
     fig, axs = plt.subplots(2, 2)
 
-    urw_acf_res = np.empty((nreps, nlags+1))
+    # urw_acf_res = np.empty((nreps, nlags+1))
+    ra_acf_res = np.empty((nreps, nlags+1))
     cnm_0_acf_res = np.empty((nreps, nlags+1))
     cnm_1_acf_res = np.empty((nreps, nlags+1))
     cnm_2_acf_res = np.empty((nreps, nlags+1))
 
-    params['step_size'] = step_size
-    urw = BrownianMotion(params)
+    # params['step_size'] = step_size
+    # urw = BrownianMotion(params)
+    ra = RandomActionsInitializer(params)
     params['step_size'] = sigma_cnrw
     params['noise_beta'] = 0
     cnm_0 = ColoredNoiseMotion(params)
@@ -202,14 +225,19 @@ if __name__ == '__main__':
     cnm_2 = ColoredNoiseMotion(params)
     
     for i in range(nreps):
-        urw_acf_res[i] = acf(urw.actions[i], nlags=nlags)
+        # urw_acf_res[i] = acf(urw.actions[i], nlags=nlags)
+        ra_acf_res[i] = acf(ra.actions[i], nlags=nlags)
         cnm_0_acf_res[i] = acf(cnm_0.actions[i], nlags=nlags)
         cnm_1_acf_res[i] = acf(cnm_1.actions[i], nlags=nlags)
         cnm_2_acf_res[i] = acf(cnm_2.actions[i], nlags=nlags)
 
-    axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
+    # axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
 
-    axs[0,0].set_title('Correlogram for Uniform Random Walk')
+    # axs[0,0].set_title('Correlogram for Uniform Random Walk')
+
+    axs[0,0].plot(range(nlags+1), np.nanmean(ra_acf_res, axis=0))
+
+    axs[0,0].set_title('Correlogram for Random Actions')
 
     axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
 
@@ -223,6 +251,9 @@ if __name__ == '__main__':
 
     axs[1,1].set_title('Correlogram for Colored Noise Motion with beta = 2')
 
+    plt.xlabel('Number of lags')
+    plt.ylabel('Correlation value')
+
     plt.suptitle('Correlograms of RW in action space for different noise sequence generators')
 
     ###### Plot mean autocorrelation over a larger number of sampled noise sequences ######
@@ -230,13 +261,14 @@ if __name__ == '__main__':
     params['n_init_episodes'] = 1
     params['action_dim'] = nreps
 
-    urw_acf_res = np.empty((nreps, nlags+1))
+    # urw_acf_res = np.empty((nreps, nlags+1))
+    ra_acf_res = np.empty((nreps, nlags+1))
     cnm_0_acf_res = np.empty((nreps, nlags+1))
     cnm_1_acf_res = np.empty((nreps, nlags+1))
     cnm_2_acf_res = np.empty((nreps, nlags+1))
 
-    params['step_size'] = step_size
-    urw = BrownianMotion(params)
+    # params['step_size'] = step_size
+    # urw = BrownianMotion(params)
     params['step_size'] = sigma_cnrw
     params['noise_beta'] = 0
     cnm_0 = ColoredNoiseMotion(params)
@@ -245,35 +277,58 @@ if __name__ == '__main__':
     params['noise_beta'] = 2
     cnm_2 = ColoredNoiseMotion(params)
     
-    urw_noise = urw.get_z()
+    # urw_noise = urw.get_z()
     cnm_noise_0 = cnm_0.get_z()
     cnm_noise_1 = cnm_1.get_z()
     cnm_noise_2 = cnm_2.get_z()
 
     for i in range(nreps):
-        print(nreps, i, len(urw_noise[:]), len(urw_noise))
-        urw_acf_res[i] = acf(urw_noise[:,i], nlags=nlags)
+        # print(nreps, i, len(urw_noise[:]), len(urw_noise))
+        # urw_acf_res[i] = acf(urw_noise[:,i], nlags=nlags)
         cnm_0_acf_res[i] = acf(cnm_noise_0[:,i], nlags=nlags)
         cnm_1_acf_res[i] = acf(cnm_noise_1[:,i], nlags=nlags)
         cnm_2_acf_res[i] = acf(cnm_noise_2[:,i], nlags=nlags)
 
-    fig, axs = plt.subplots(2, 2)
+    # fig, axs = plt.subplots(2, 2)
 
-    axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
+    # # axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
 
-    axs[0,0].set_title('Correlogram for Uniform Random Walk')
+    # # axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
-    axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
+    # axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
 
-    axs[0,1].set_title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
+    # axs[0,1].set_title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
 
-    axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
+    # axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
 
-    axs[1,0].set_title('Correlogram for Colored Noise with beta = 1')
+    # axs[1,0].set_title('Correlogram for Colored Noise with beta = 1')
 
-    axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+    # axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
 
-    axs[1,1].set_title('Correlogram for Colored Noise with beta = 2')
+    # axs[1,1].set_title('Correlogram for Colored Noise with beta = 2')
+
+    # plt.suptitle('Correlograms for different noise sequence generators')
+
+    fig, axs = plt.subplots(3, 1)
+
+    # axs[0,0].plot(range(nlags+1), np.nanmean(urw_acf_res, axis=0))
+
+    # axs[0,0].set_title('Correlogram for Uniform Random Walk')
+
+    axs[0].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
+
+    axs[0].set_title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
+
+    axs[1].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
+
+    axs[1].set_title('Correlogram for Colored Noise with beta = 1')
+
+    axs[2].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+
+    axs[2].set_title('Correlogram for Colored Noise with beta = 2')
+
+    plt.xlabel('Number of lags')
+    plt.ylabel('Correlation value')
 
     plt.suptitle('Correlograms for different noise sequence generators')
     
