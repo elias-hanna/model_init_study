@@ -25,7 +25,7 @@ if __name__ == '__main__':
     from matplotlib import cm
     import matplotlib
 
-    cap_val = 20
+    cap_val = 200
     
     module_path = os.path.dirname(model_init_study.__file__)
 
@@ -378,8 +378,8 @@ if __name__ == '__main__':
 
             # mean_pred_errors[i, j, 2] = np.nanmean(np.absolute(pred_error_vals))
             # std_pred_errors[i, j, 2] = np.nanstd(np.absolute(pred_error_vals))
-            mean_pred_errors[i, j, 2] = np.nanmean(abs_full_pred_errors)
-            std_pred_errors[i, j, 2] = np.nanstd(abs_full_pred_errors)
+            mean_pred_errors[i, j, 2] = np.nanmean(abs_full_pred_errors[:])
+            std_pred_errors[i, j, 2] = np.nanstd(abs_full_pred_errors[:])
 
             # cell_text[i][j] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
             cell_text_full[j][i] = f"{round(mean_pred_errors[i,j,2],1)} \u00B1 {round(std_pred_errors[i,j,2],1)}"
@@ -395,8 +395,8 @@ if __name__ == '__main__':
         
             ## n = 1
 
-            mean_pred_errors[i, j, 0] = np.nanmean(np.absolute(example_1_step_pred_errors))
-            std_pred_errors[i, j, 0] = np.nanstd(np.absolute(example_1_step_pred_errors))
+            mean_pred_errors[i, j, 0] = np.nanmean(np.absolute(example_1_step_pred_errors[:]))
+            std_pred_errors[i, j, 0] = np.nanstd(np.absolute(example_1_step_pred_errors[:]))
             cell_text_1_step[j][i] = f"{round(mean_pred_errors[i,j,0],3)} \u00B1 {round(std_pred_errors[i,j,0],3)}"
 
             # for r in range(trajs_per_rep):
@@ -700,8 +700,8 @@ if __name__ == '__main__':
 
             # mean_pred_errors[i, j, 1] = np.nanmean(np.absolute(example_20_step_pred_errors))
             # std_pred_errors[i, j, 1] = np.nanstd(np.absolute(example_20_step_pred_errors))
-            mean_pred_errors[i, j, 1] = np.nanmean(abs_20_step_pred_errors)
-            std_pred_errors[i, j, 1] = np.nanstd(abs_20_step_pred_errors)
+            mean_pred_errors[i, j, 1] = np.nanmean(abs_20_step_pred_errors[:])
+            std_pred_errors[i, j, 1] = np.nanstd(abs_20_step_pred_errors[:])
             cell_text_20_step[j][i] = f"{round(mean_pred_errors[i,j,1],3)} \u00B1 {round(std_pred_errors[i,j,1],3)}"
                 
 

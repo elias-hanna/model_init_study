@@ -7,6 +7,7 @@ from multiprocessing import Pool
 
 # Other imports
 import copy
+import numpy as np
 
 class Initializer:
     def __init__(self, params):
@@ -61,8 +62,9 @@ class Initializer:
             if self._is_goal_env:
                 obs = obs['observation']
             action = self._get_action(idx, obs, t)
-            action[action>self._action_max] = self._action_max
-            action[action<self._action_min] = self._action_min
+            action  = np.clip(action, self._action_min, self._action_max)
+            # action[action>self._action_max] = self._action_max
+            # action[action<self._action_min] = self._action_min
             if self.inc_rew:
                 transitions.append((action, obs, reward))
             else:
