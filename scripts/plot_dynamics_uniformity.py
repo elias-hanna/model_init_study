@@ -138,19 +138,23 @@ def main(args):
     uni_metric_std = envs_cv_std
     
     ## Plot boxplots of uniformity
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(4, 4))
 
     x = [i for i in range(len(environments))]
     # ax.errorbar(x, envs_jsd_mean_divs, yerr=envs_jsd_std_divs, fmt='o', capsize=4)
     # ax.errorbar(x, envs_cv_mean, yerr=envs_cv_std, fmt='o', capsize=4)
     # ax.errorbar(x, envs_qcd_mean, yerr=envs_qcd_std, fmt='o', capsize=4)
-    ax.errorbar(x, uni_metric_mean, yerr=uni_metric_std, fmt='o', capsize=4)
+    ax.errorbar(x, uni_metric_mean, yerr=uni_metric_std, fmt='o', capsize=4,
+                color='black')
+    margin = .5
+    # for i in range(len(environments)):
+        # plt.axhline(y=uni_metric_mean[i], xmin=-margin, xmax=i, linewidth=1, color='black', linestyle='--')
 
     plt.xticks(x, environments)
-
-    ax.set_xlabel('Environments', fontsize=15)
-    ax.set_ylabel('Uniformity measure', fontsize=15)
-    plt.title('Dynamics uniformity for various robotics environments', fontsize=20)
+    plt.xlim(-margin,len(environments)-1+margin)
+    ax.set_xlabel('Environments', fontsize=9)
+    ax.set_ylabel('Consistency measure', fontsize=9)
+    # plt.title('Action consistency for various robotics environments', fontsize=20)
     # plt.show()
     ## Save figure
     plt.savefig(f"environments_uniformity", dpi=300, bbox_inches='tight')
@@ -200,17 +204,20 @@ def main(args):
                           markersize=12, markeredgewidth=5,
                           markeredgecolor=colors.to_rgba(i),
                           markerfacecolor=colors.to_rgba(i),
-                          label=init_method, alpha=0.4)
+                          label=init_method, alpha=0.4, ls='-',
+                               color=colors.to_rgba(i))
         ax_all_plan_h.errorbar(x, mean_pred_errors_plan_h, fmt=fmts[i],
                                markersize=12, markeredgewidth=5,
                                markeredgecolor=colors.to_rgba(i),
                                markerfacecolor=colors.to_rgba(i),
-                               label=init_method, alpha=0.4)
+                               label=init_method, alpha=0.4, ls='-',
+                               color=colors.to_rgba(i))
         ax_all_full.errorbar(x, mean_pred_errors_full, fmt=fmts[i],
                              markersize=12, markeredgewidth=5,
                              markeredgecolor=colors.to_rgba(i),
                              markerfacecolor=colors.to_rgba(i),
-                             label=init_method, alpha=0.4)
+                             label=init_method, alpha=0.4, ls='-',
+                               color=colors.to_rgba(i))
 
         prepare_plot(ax_1, fig_1, '1-step', ticks,
                      environments, init_method)
@@ -219,9 +226,12 @@ def main(args):
         prepare_plot(ax_full, fig_full, 'H-step', ticks,
                      environments, init_method)
 
-        fig_1.savefig(f"{init_method}_pred_error_vs_uniformity_1_step")
-        fig_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h")
-        fig_full.savefig(f"{init_method}_pred_error_vs_uniformity_full")
+        fig_1.savefig(f"{init_method}_pred_error_vs_uniformity_1_step",
+                      bbox_inches='tight')
+        fig_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h",
+                           bbox_inches='tight')
+        # fig_full.savefig(f"{init_method}_pred_error_vs_uniformity_full",
+                         # bbox_inches='tight')
 
     prepare_plot(ax_all_1, fig_all_1, '1-step', ticks,
                  environments, 'all init_methods')
@@ -233,17 +243,21 @@ def main(args):
     ax_all_1.legend(prop={'size': 10})
     ax_all_plan_h.legend(prop={'size': 10})
     ax_all_full.legend(prop={'size': 10})
-    fig_all_1.savefig(f"{init_method}_pred_error_vs_uniformity_1_step_all")
-    fig_all_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h_all")
-    fig_all_full.savefig(f"{init_method}_pred_error_vs_uniformity_full_all")
+    fig_all_1.savefig(f"pred_error_vs_uniformity_1_step_all",
+                      bbox_inches='tight')
+    fig_all_plan_h.savefig(f"pred_error_vs_uniformity_plan_h_all",
+                           bbox_inches='tight')
+    # fig_all_full.savefig(f"pred_error_vs_uniformity_full_all",
+                         # bbox_inches='tight')
         
 def prepare_plot(ax, fig, h, ticks, environments, init_method):
-    ax.set_xticks(ticks, environments, fontsize=15)
-    ax.set_ylim(0,1)
-    ax.set_xlabel('Environments (from high to low uniformity)', fontsize=15)
-    ax.set_ylabel('Model prediction error', fontsize=15)
-    ax.set_title(f'{h} model prediction error depending on \n'\
-                 f'environment uniformity for {init_method}', fontsize=20)
+    ax.set_xticks(ticks, environments, fontsize=12)
+    ax.set_ylim(-0.1,1.1)
+    ax.set_xlim(-0.5,3.2)
+    ax.set_xlabel('Environments (from high to low uniformity)', fontsize=12)
+    ax.set_ylabel('Model prediction error', fontsize=12)
+    # ax.set_title(f'{h} model prediction error depending on \n'\
+                 # f'environment consistency for {init_method}', fontsize=20)
 
 if __name__ == '__main__':
     import numpy as np
@@ -261,4 +275,19 @@ if __name__ == '__main__':
     parser.add_argument('--path-to-pred-error', type=str, default=None)
 
     args = parser.parse_args()
+
+    formatted_init_methods = []
+    for init_method in args.init_methods:
+        if init_method == 'random-actions':
+            init_method = 'Random Actions'
+        elif init_method == 'random-policies':
+            init_method = 'Random Policies'
+        elif init_method == 'colored-noise-beta-0':
+            init_method = 'CNRW_0'
+        elif init_method == 'colored-noise-beta-1':
+            init_method = 'CNRW_1'
+        elif init_method == 'colored-noise-beta-2':
+            init_method = 'CNRW_2'
+        formatted_init_methods.append(init_method)
+    args.init_methods = formatted_init_methods
     main(args)

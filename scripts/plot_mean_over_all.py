@@ -25,7 +25,8 @@ if __name__ == '__main__':
     from matplotlib import cm
     import matplotlib
 
-    cap_val = 200
+    # cap_val = 50
+    stop_hor = -1
     
     module_path = os.path.dirname(model_init_study.__file__)
 
@@ -374,12 +375,12 @@ if __name__ == '__main__':
 
             abs_full_pred_errors = np.absolute(pred_error_vals)
             # abs_20_step_pred_errors = abs_20_step_pred_errors[abs_20_step_pred_errors < 20]
-            abs_full_pred_errors[abs_full_pred_errors > cap_val] = cap_val
+            # abs_full_pred_errors[abs_full_pred_errors > cap_val] = cap_val
 
             # mean_pred_errors[i, j, 2] = np.nanmean(np.absolute(pred_error_vals))
             # std_pred_errors[i, j, 2] = np.nanstd(np.absolute(pred_error_vals))
-            mean_pred_errors[i, j, 2] = np.nanmean(abs_full_pred_errors[:])
-            std_pred_errors[i, j, 2] = np.nanstd(abs_full_pred_errors[:])
+            mean_pred_errors[i, j, 2] = np.nanmean(abs_full_pred_errors[:stop_hor])
+            std_pred_errors[i, j, 2] = np.nanstd(abs_full_pred_errors[:stop_hor])
 
             # cell_text[i][j] = f"\u0394 s = {mean_ds} \u00B1 {std_ds}"
             cell_text_full[j][i] = f"{round(mean_pred_errors[i,j,2],1)} \u00B1 {round(std_pred_errors[i,j,2],1)}"
@@ -395,8 +396,8 @@ if __name__ == '__main__':
         
             ## n = 1
 
-            mean_pred_errors[i, j, 0] = np.nanmean(np.absolute(example_1_step_pred_errors[:]))
-            std_pred_errors[i, j, 0] = np.nanstd(np.absolute(example_1_step_pred_errors[:]))
+            mean_pred_errors[i, j, 0] = np.nanmean(np.absolute(example_1_step_pred_errors[:stop_hor]))
+            std_pred_errors[i, j, 0] = np.nanstd(np.absolute(example_1_step_pred_errors[:stop_hor]))
             cell_text_1_step[j][i] = f"{round(mean_pred_errors[i,j,0],3)} \u00B1 {round(std_pred_errors[i,j,0],3)}"
 
             # for r in range(trajs_per_rep):
@@ -696,12 +697,13 @@ if __name__ == '__main__':
 
             abs_20_step_pred_errors = np.absolute(example_20_step_pred_errors)
             # abs_20_step_pred_errors = abs_20_step_pred_errors[abs_20_step_pred_errors < 20]
-            abs_20_step_pred_errors[abs_20_step_pred_errors > cap_val] = cap_val
+            # abs_20_step_pred_errors[abs_20_step_pred_errors > cap_val] = cap_val
 
             # mean_pred_errors[i, j, 1] = np.nanmean(np.absolute(example_20_step_pred_errors))
             # std_pred_errors[i, j, 1] = np.nanstd(np.absolute(example_20_step_pred_errors))
-            mean_pred_errors[i, j, 1] = np.nanmean(abs_20_step_pred_errors[:])
-            std_pred_errors[i, j, 1] = np.nanstd(abs_20_step_pred_errors[:])
+
+            mean_pred_errors[i, j, 1] = np.nanmean(abs_20_step_pred_errors[:stop_hor])
+            std_pred_errors[i, j, 1] = np.nanstd(abs_20_step_pred_errors[:stop_hor])
             cell_text_20_step[j][i] = f"{round(mean_pred_errors[i,j,1],3)} \u00B1 {round(std_pred_errors[i,j,1],3)}"
                 
 
@@ -1047,12 +1049,23 @@ if __name__ == '__main__':
         example_ax_pred_disagr.cla()
             
 
-
-
-
-
-
-
+    if env_name == 'cartpole':
+        ## change order on 25 step because of dump order error in
+        ## MIS PETS TS1 
+        tmp_0 = mean_pred_errors[1][0][1]
+        tmp_1 = mean_pred_errors[2][0][1]
+        tmp_2 = mean_pred_errors[3][0][1]
+        mean_pred_errors[1][0][1] = tmp_1
+        mean_pred_errors[2][0][1] = tmp_2
+        mean_pred_errors[3][0][1] = tmp_0
+        ## Same for cell text
+        tmp_0 = cell_text_20_step[0][1]
+        tmp_1 = cell_text_20_step[0][2]
+        tmp_2 = cell_text_20_step[0][3]
+        cell_text_20_step[0][1] = tmp_1
+        cell_text_20_step[0][2] = tmp_2
+        cell_text_20_step[0][3] = tmp_0
+        
     ## Save aggregated data
     np.savez(f"{env_name}_pred_error_data.npz",
              mean_pred_errors=mean_pred_errors,

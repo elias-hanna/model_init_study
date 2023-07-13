@@ -98,6 +98,8 @@ if __name__ == '__main__':
     from statsmodels.tsa.stattools import acf
 
     import matplotlib.pyplot as plt
+    from matplotlib import cm
+    import matplotlib
     import mb_ge
     import gym
 
@@ -156,6 +158,17 @@ if __name__ == '__main__':
 
     ###### Simple test of each random walk ######
 
+    cmap = plt.cm.get_cmap('hsv', 4+1)
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=4+1)
+
+    colors = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    ## Linestyles for plots
+
+    linestyles = ['-', '--', ':', '-.']
+
+    fig_all, ax_all = plt.subplots()
+
     fig, axs = plt.subplots(2, 2)
 
     # ## Uniform Random Walk
@@ -168,43 +181,70 @@ if __name__ == '__main__':
     ## Random Actions
     ra = RandomActionsInitializer(params)
 
-    axs[0,0].plot(range(max_step), ra.actions[0])
+    axs[0,0].plot(range(max_step), ra.actions[0], color='black')
+    ax_all.plot(range(max_step), ra.actions[0], linestyle=linestyles[0],
+                color=colors.to_rgba(0), label='Random Actions')
 
     axs[0,0].set_title('Action value across time for Random Actions')
+
+    axs[0,0].set_xlim(0, max_step)
+    axs[0,0].set_xlabel('Timestep', fontsize=18)
+    axs[0,0].set_ylabel('Action Value', fontsize=18)
 
     ## Colored Noise motion beta = 0 (Brownian Motion)
     params['noise_beta'] = 0
     cnm_0 = ColoredNoiseMotion(params)
 
-    axs[0,1].plot(range(max_step), cnm_0.actions[0])
+    axs[0,1].plot(range(max_step), cnm_0.actions[0], color='black')
+    ax_all.plot(range(max_step), cnm_0.actions[0], linestyle=linestyles[1],
+                color=colors.to_rgba(1), label='CNRW_0')
 
-    axs[0,1].set_title('Action value across time for Colored Noise Motion \n ' \
+    axs[0,1].set_title('Action value across time for Colored Noise Motion ' \
                        'with beta = 0 (Brownian Motion)')
+
+    axs[0,1].set_xlim(0, max_step)
+    axs[0,1].set_xlabel('Timestep', fontsize=18)
+    axs[0,1].set_ylabel('Action Value', fontsize=18)
 
     ## Colored Noise motion beta = 1
     params['noise_beta'] = 1
     cnm_1 = ColoredNoiseMotion(params)
 
-    axs[1,0].plot(range(max_step), cnm_1.actions[0])
+    axs[1,0].plot(range(max_step), cnm_1.actions[0], color='black')
+    ax_all.plot(range(max_step), cnm_1.actions[0], linestyle=linestyles[2],
+                color=colors.to_rgba(2), label='CNRW_1')
 
-    axs[1,0].set_title('Action value across time for Colored Noise Motion \n ' \
+    axs[1,0].set_title('Action value across time for Colored Noise Motion ' \
                        'with beta = 1')
+
+    axs[1,0].set_xlim(0, max_step)
+    axs[1,0].set_xlabel('Timestep', fontsize=18)
+    axs[1,0].set_ylabel('Action Value', fontsize=18)
 
     ## Colored Noise motion beta = 2
     params['noise_beta'] = 2
     cnm_2 = ColoredNoiseMotion(params)
 
-    axs[1,1].plot(range(max_step), cnm_2.actions[0])
+    axs[1,1].plot(range(max_step), cnm_2.actions[0], color='black')
+    ax_all.plot(range(max_step), cnm_2.actions[0], linestyle=linestyles[3],
+                color=colors.to_rgba(3), label='CNRW_2')
 
-    axs[1,1].set_title('Action value across time for Colored Noise Motion \n ' \
+    axs[1,1].set_title('Action value across time for Colored Noise Motion ' \
                        'with beta = 2')
 
-    plt.xlabel('Timestep')
-    plt.ylabel('Action Value')
+    axs[1,1].set_xlim(0, max_step)
+    axs[1,1].set_xlabel('Timestep', fontsize=18)
+    axs[1,1].set_ylabel('Action Value', fontsize=18)
 
     plt.suptitle('Examples of RW in action space for different noise sequence generators')
-    
+
+    ax_all.set_xlim(0, max_step)
+    ax_all.set_xlabel('Timestep', fontsize=18)
+    ax_all.set_ylabel('Action Value', fontsize=18)
+    ax_all.legend(prop = { "size": 13 })
+
     ###### Plot mean autocorrelation over a larger number of sampled action sequences ######
+    fig_all, ax_all = plt.subplots()
     fig, axs = plt.subplots(2, 2)
 
     # urw_acf_res = np.empty((nreps, nlags+1))
@@ -235,25 +275,51 @@ if __name__ == '__main__':
 
     # axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
-    axs[0,0].plot(range(nlags+1), np.nanmean(ra_acf_res, axis=0))
+    axs[0,0].plot(range(nlags+1), np.nanmean(ra_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(ra_acf_res, axis=0), linestyle=linestyles[0],
+                color=colors.to_rgba(0), label='Random Actions')
 
     axs[0,0].set_title('Correlogram for Random Actions')
 
-    axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
+    axs[0,0].set_xlim(0, nlags)
+    axs[0,0].set_xlabel('Number of lags')
+    axs[0,0].set_ylabel('Correlation value')
+
+    axs[0,1].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0), linestyle=linestyles[1],
+                color=colors.to_rgba(1), label='CNRW_0')
 
     axs[0,1].set_title('Correlogram for Colored Noise Motion with beta = 0 (Brownian Motion)')
 
-    axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
+    axs[0,1].set_xlim(0, nlags)
+    axs[0,1].set_xlabel('Number of lags')
+    axs[0,1].set_ylabel('Correlation value')
+
+    axs[1,0].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0), linestyle=linestyles[2],
+                color=colors.to_rgba(2), label='CNRW_1')
 
     axs[1,0].set_title('Correlogram for Colored Noise Motion with beta = 1')
 
-    axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+    axs[1,0].set_xlim(0, nlags)
+    axs[1,0].set_xlabel('Number of lags')
+    axs[1,0].set_ylabel('Correlation value')
+
+    axs[1,1].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0), linestyle=linestyles[3],
+                color=colors.to_rgba(3), label='CNRW_2')
 
     axs[1,1].set_title('Correlogram for Colored Noise Motion with beta = 2')
 
-    plt.xlabel('Number of lags')
-    plt.ylabel('Correlation value')
-
+    axs[1,1].set_xlim(0, nlags)
+    axs[1,1].set_xlabel('Number of lags')
+    axs[1,1].set_ylabel('Correlation value')
+    
+    ax_all.set_xlim(0, nlags)
+    ax_all.set_xlabel('Number of lags', fontsize=18)
+    ax_all.set_ylabel('Correlation value', fontsize=18)
+    ax_all.legend(prop = { "size": 13 })
+    
     plt.suptitle('Correlograms of RW in action space for different noise sequence generators')
 
     ###### Plot mean autocorrelation over a larger number of sampled noise sequences ######
@@ -308,6 +374,7 @@ if __name__ == '__main__':
     # axs[1,1].set_title('Correlogram for Colored Noise with beta = 2')
 
     # plt.suptitle('Correlograms for different noise sequence generators')
+    fig_all, ax_all = plt.subplots()
 
     fig, axs = plt.subplots(3, 1)
 
@@ -315,20 +382,40 @@ if __name__ == '__main__':
 
     # axs[0,0].set_title('Correlogram for Uniform Random Walk')
 
-    axs[0].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0))
+    axs[0].plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_0_acf_res, axis=0), linestyle=linestyles[1],
+                color=colors.to_rgba(1), label='CNRW_0')
 
     axs[0].set_title('Correlogram for Colored Noise with beta = 0 (Brownian Motion)')
 
-    axs[1].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0))
+    axs[0].set_xlim(0, nlags)
+    axs[0].set_xlabel('Number of lags')
+    axs[0].set_ylabel('Correlation value')
+
+    axs[1].plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_1_acf_res, axis=0), linestyle=linestyles[2],
+                color=colors.to_rgba(2), label='CNRW_1')
 
     axs[1].set_title('Correlogram for Colored Noise with beta = 1')
 
-    axs[2].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0))
+    axs[1].set_xlim(0, nlags)
+    axs[1].set_xlabel('Number of lags')
+    axs[1].set_ylabel('Correlation value')
+
+    axs[2].plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0), color='black')
+    ax_all.plot(range(nlags+1), np.nanmean(cnm_2_acf_res, axis=0), linestyle=linestyles[3],
+                color=colors.to_rgba(3), label='CNRW_2')
 
     axs[2].set_title('Correlogram for Colored Noise with beta = 2')
 
-    plt.xlabel('Number of lags')
-    plt.ylabel('Correlation value')
+    axs[2].set_xlim(0, nlags)
+    axs[2].set_xlabel('Number of lags')
+    axs[2].set_ylabel('Correlation value')
+
+    ax_all.set_xlim(0, nlags)
+    ax_all.set_xlabel('Number of lags', fontsize=18)
+    ax_all.set_ylabel('Correlation value', fontsize=18)
+    ax_all.legend(prop = { "size": 13 })
 
     plt.suptitle('Correlograms for different noise sequence generators')
     

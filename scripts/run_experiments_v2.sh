@@ -14,7 +14,8 @@ methods=(random-actions brownian-motion colored-noise-beta-0 colored-noise-beta-
 
 
 environments=(cartpole reacher pusher)
-# environments=(reacher pusher)
+environments=(cartpole)
+environments=(reacher pusher)
 #environments=(ball_in_cup)
 pred_error_plot_upper_limits=(5 5 5) # warning needs to be in same order as envs
 disagr_plot_upper_limits=(5 5 5) # warning needs to be in same order as envs
