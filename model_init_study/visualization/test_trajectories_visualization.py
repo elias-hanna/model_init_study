@@ -188,110 +188,110 @@ class TestTrajectoriesVisualization(VisualizationMethod):
         # else:
             # pred_trajs, disagrs, pred_errors = model_trajs
         pred_trajs, disagrs, pred_errors = model_trajs
-        ## Make dump dirs
-        run_name = '{}_{}_{}'.format(env_name, init_name, num_episodes)
-        fig_path = os.path.join(self.dump_path, '{}/disagr'.format(run_name))
-        os.makedirs(fig_path, exist_ok=True)
+        # ## Make dump dirs
+        # run_name = '{}_{}_{}'.format(env_name, init_name, num_episodes)
+        # fig_path = os.path.join(self.dump_path, '{}/disagr'.format(run_name))
+        # os.makedirs(fig_path, exist_ok=True)
 
-        print('Current working dir: {}'.format(os.getcwd()))
-        print('Test trajectories vis dumping figs on {}'.format(fig_path))
+        # print('Current working dir: {}'.format(os.getcwd()))
+        # print('Test trajectories vis dumping figs on {}'.format(fig_path))
         
-        ## Compute mean and stddev of trajs disagreement
-        mean_disagr = np.nanmean(disagrs, axis=0)
-        std_disagr = np.nanstd(disagrs, axis=0)
-        ## Compute mean and stddev of trajs prediction error
-        mean_pred_error = np.nanmean(pred_errors, axis=0)
-        std_pred_error = np.nanstd(pred_errors, axis=0)
+        # ## Compute mean and stddev of trajs disagreement
+        # mean_disagr = np.nanmean(disagrs, axis=0)
+        # std_disagr = np.nanstd(disagrs, axis=0)
+        # ## Compute mean and stddev of trajs prediction error
+        # mean_pred_error = np.nanmean(pred_errors, axis=0)
+        # std_pred_error = np.nanstd(pred_errors, axis=0)
             
-        ## Create fig and ax
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ## Prepare plot
-        labels = ['Number of steps on environment', 'Mean ensemble disagreement']
-        limits = [0, len(mean_disagr),
-                  min(mean_disagr-std_disagr), max(mean_disagr+std_disagr)]
-        self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        # ## Create fig and ax
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # ## Prepare plot
+        # labels = ['Number of steps on environment', 'Mean ensemble disagreement']
+        # limits = [0, len(mean_disagr),
+        #           min(mean_disagr-std_disagr), max(mean_disagr+std_disagr)]
+        # self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
 
-        ## Figure for model ensemble disagreement
-        plt.plot(range(len(mean_disagr)), mean_disagr, 'k-')
-        if plot_stddev:
-            plt.fill_between(range(len(mean_disagr)),
-                             mean_disagr-std_disagr,
-                             mean_disagr+std_disagr,
-                             facecolor='green', alpha=0.5)
-        ## Set plot title
-        plt.title("Mean model ensemble disagreeement along {} trajectories \n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
-        ## Save fig
-        plt.savefig("{}/mean_test_trajectories_{}_disagr_{}".format(fig_path, label, traj_type),
-                    bbox_inches='tight')
+        # ## Figure for model ensemble disagreement
+        # plt.plot(range(len(mean_disagr)), mean_disagr, 'k-')
+        # if plot_stddev:
+        #     plt.fill_between(range(len(mean_disagr)),
+        #                      mean_disagr-std_disagr,
+        #                      mean_disagr+std_disagr,
+        #                      facecolor='green', alpha=0.5)
+        # ## Set plot title
+        # plt.title("Mean model ensemble disagreeement along {} trajectories \n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
+        # ## Save fig
+        # plt.savefig("{}/mean_test_trajectories_{}_disagr_{}".format(fig_path, label, traj_type),
+        #             bbox_inches='tight')
 
-        if dump_separate:
-            for i in range(len(disagrs)):
-                ## Create fig and ax
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ## Prepare plot
-                labels = ['Number of steps on environment', 'Ensemble disagreement']
-                limits = [0, len(disagrs[i]),
-                          min(disagrs[i]), max(disagrs[i])]
-                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        # if dump_separate:
+        #     for i in range(len(disagrs)):
+        #         ## Create fig and ax
+        #         fig = plt.figure()
+        #         ax = fig.add_subplot(111)
+        #         ## Prepare plot
+        #         labels = ['Number of steps on environment', 'Ensemble disagreement']
+        #         limits = [0, len(disagrs[i]),
+        #                   min(disagrs[i]), max(disagrs[i])]
+        #         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
-                ## Figure for model ensemble disagreement
-                plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
-                ## Set plot title
-                plt.title("Mean model ensemble disagreeement along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
-                ## Save fig
-                plt.savefig("{}/{}_test_trajectories_{}_disagr_{}".format(fig_path, i, label, traj_type),
-                            bbox_inches='tight')
+        #         ## Figure for model ensemble disagreement
+        #         plt.plot(range(len(disagrs[i])), disagrs[i], 'k-')
+        #         ## Set plot title
+        #         plt.title("Mean model ensemble disagreeement along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
+        #         ## Save fig
+        #         plt.savefig("{}/{}_test_trajectories_{}_disagr_{}".format(fig_path, i, label, traj_type),
+        #                     bbox_inches='tight')
 
-        ## Make dump dirs
-        fig_path = os.path.join(self.dump_path, '{}/pred_error'.format(run_name))
-        os.makedirs(fig_path, exist_ok=True)        
+        # ## Make dump dirs
+        # fig_path = os.path.join(self.dump_path, '{}/pred_error'.format(run_name))
+        # os.makedirs(fig_path, exist_ok=True)        
             
-        ## Create fig and ax
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ## Prepare plot
-        labels = ['Number of steps on environment', 'Mean prediction error']
-        limits = [0, len(mean_pred_error),
-                  min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
-        self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        # ## Create fig and ax
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # ## Prepare plot
+        # labels = ['Number of steps on environment', 'Mean prediction error']
+        # limits = [0, len(mean_pred_error),
+        #           min(mean_pred_error-std_pred_error), max(mean_pred_error+std_pred_error)]
+        # self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
 
-        ## Figure for prediction error
-        plt.plot(range(len(mean_pred_error)), mean_pred_error, 'k-')
+        # ## Figure for prediction error
+        # plt.plot(range(len(mean_pred_error)), mean_pred_error, 'k-')
         
-        if plot_stddev:
-            plt.fill_between(range(len(mean_pred_error)),
-                             mean_pred_error-std_pred_error,
-                             mean_pred_error+std_pred_error,
-                             facecolor='green', alpha=0.5)
-        ## Set plot title
-        plt.title("Mean prediction error along {} trajectories\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
-        ## Save fig
-        plt.savefig("{}/mean_test_trajectories_{}_pred_error_{}".format(fig_path, label, traj_type),
-                    bbox_inches='tight')
+        # if plot_stddev:
+        #     plt.fill_between(range(len(mean_pred_error)),
+        #                      mean_pred_error-std_pred_error,
+        #                      mean_pred_error+std_pred_error,
+        #                      facecolor='green', alpha=0.5)
+        # ## Set plot title
+        # plt.title("Mean prediction error along {} trajectories\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
+        # ## Save fig
+        # plt.savefig("{}/mean_test_trajectories_{}_pred_error_{}".format(fig_path, label, traj_type),
+        #             bbox_inches='tight')
 
-        if dump_separate:
-            for i in range(len(pred_errors)):
-                ## Create fig and ax
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ## Prepare plot
-                labels = ['Number of steps on environment', 'Prediction Error']
-                limits = [0, len(pred_errors[i]),
-                          min(pred_errors[i]), max(pred_errors[i])]
-                self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
+        # if dump_separate:
+        #     for i in range(len(pred_errors)):
+        #         ## Create fig and ax
+        #         fig = plt.figure()
+        #         ax = fig.add_subplot(111)
+        #         ## Prepare plot
+        #         labels = ['Number of steps on environment', 'Prediction Error']
+        #         limits = [0, len(pred_errors[i]),
+        #                   min(pred_errors[i]), max(pred_errors[i])]
+        #         self.prepare_plot(plt, fig, ax, mode='2d', limits=limits, ax_labels=labels)
                 
-                ## Figure for model ensemble disagreement
-                plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
-                ## Set plot title
-                plt.title("Mean prediction error along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
-                ## Save fig
-                plt.savefig("{}/{}_test_trajectories_{}_pred_error_{}".format(fig_path, i, label, traj_type),
-                            bbox_inches='tight')
+        #         ## Figure for model ensemble disagreement
+        #         plt.plot(range(len(pred_errors[i])), pred_errors[i], 'k-')
+        #         ## Set plot title
+        #         plt.title("Mean prediction error along single {} trajectory\n{} on {} episodes\n{}".format(traj_type, init_name, num_episodes, label))
+        #         ## Save fig
+        #         plt.savefig("{}/{}_test_trajectories_{}_pred_error_{}".format(fig_path, i, label, traj_type),
+        #                     bbox_inches='tight')
 
-        if show:
-            plt.show()
-        plt.close()
+        # if show:
+        #     plt.show()
+        # plt.close()
 
         return pred_trajs, disagrs, pred_errors
