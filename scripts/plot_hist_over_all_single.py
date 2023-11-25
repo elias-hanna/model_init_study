@@ -87,6 +87,8 @@ if __name__ == '__main__':
 
     env_register_id = 'BallInCup3d-v0'
     gym_args = {}
+
+    is_pets_env = False
     if args.environment == 'ball_in_cup':
         env_register_id = 'BallInCup3d-v0'
         separator = BallInCupSeparator
@@ -124,6 +126,27 @@ if __name__ == '__main__':
         ss_min = -10
         ss_max = 10
         gym_args['physical_traps'] = True
+    elif args.environment == 'cartpole':
+        is_pets_env = True
+        max_step = 200
+        obs_dim = 4
+        act_dim = 1
+        ss_min = -10
+        ss_max = 10
+    elif args.environment == 'pusher':
+        is_pets_env = True
+        max_step = 150
+        obs_dim = 20
+        act_dim = 7
+        ss_min = -10
+        ss_max = 10
+    elif args.environment == 'reacher':
+        is_pets_env = True
+        max_step = 150
+        obs_dim = 17
+        act_dim = 7
+        ss_min = -10
+        ss_max = 10
     else:
         raise ValueError(f"{args.environment} is not a defined environment")
 
@@ -133,11 +156,13 @@ if __name__ == '__main__':
                                     'examples/',
                                     args.environment+'_example_trajectories.npz')
     obs = env.reset()
-    if isinstance(obs, dict):
-        obs_dim = env.observation_space['observation'].shape[0]
-    else:
-        obs_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.shape[0]
+
+    if not is_pets_env:
+        if isinstance(obs, dict):
+            obs_dim = env.observation_space['observation'].shape[0]
+        else:
+            obs_dim = env.observation_space.shape[0]
+        act_dim = env.action_space.shape[0]
 
     rep_folders = next(os.walk(f'.'))[1]
 
@@ -148,7 +173,7 @@ if __name__ == '__main__':
     init_episodes = args.init_episodes
     n_init_episodes = len(args.init_episodes)
         
-    params = {'obs_dim': obs_dim}
+    params = {'obs_dim': obs_dim, 'env_name': args.environment}
 
     ssr_vis = StateSpaceRepartitionVisualization(params)
 
@@ -305,12 +330,29 @@ if __name__ == '__main__':
 
         ## Ugly fix because the brownian motion rw is actually a urw and cnb0 is bm
         for i in range(len(init_methods)):
-            if init_methods[i] == 'brownian-motion':
-                init_methods[i] = 'uniform-random-walk'
+            # if init_methods[i] == 'uniform-random-walk':
+            #     init_methods[i] = 'brownian-motion'
+            #     continue
+            # if init_methods[i] == 'brownian-motion':
+            #     init_methods[i] = 'colored-noise-beta-0'
+            #     continue
+            
+            if init_methods[i] == 'random-actions':
+                init_methods[i] = 'Random Actions'
+                continue
+            if init_methods[i] == 'random-policies':
+                init_methods[i] = 'Random Policies'
                 continue
             if init_methods[i] == 'colored-noise-beta-0':
-                init_methods[i] = 'brownian-motion'
+                init_methods[i] = 'CNRW_0'
                 continue
+            if init_methods[i] == 'colored-noise-beta-1':
+                init_methods[i] = 'CNRW_1'
+                continue
+            if init_methods[i] == 'colored-noise-beta-2':
+                init_methods[i] = 'CNRW_2'
+                continue
+            
         fig_path = os.path.join(path, f'{args.environment}_repartition_actions_{init_episode}')
         ssr_vis.dump_plots(args.environment, '', init_episode, 'train', dim_type='action',
                            spe_fig_path=fig_path, legends=init_methods, plot_all=True)
@@ -323,16 +365,27 @@ if __name__ == '__main__':
                            spe_fig_path=fig_path, legends=init_methods, plot_all=True)
                            # mins=obs_mins, maxs=obs_maxs, plot_all=True)
 
-        for i in range(len(init_methods)):
-            if init_methods[i] == 'uniform-random-walk':
-                init_methods[i] = 'brownian-motion'
-                continue
-            if init_methods[i] == 'brownian-motion':
-                init_methods[i] = 'colored-noise-beta-0'
-                continue
+        
+        # for i in range(len(init_methods)):
+        #     # if init_methods[i] == 'uniform-random-walk':
+        #     #     init_methods[i] = 'brownian-motion'
+        #     #     continue
+        #     # if init_methods[i] == 'brownian-motion':
+        #     #     init_methods[i] = 'colored-noise-beta-0'
+        #     #     continue
+            
+        #     # if init_methods[i] == 'colored-noise-beta-0':
+        #     #     init_methods[i] = 'CNRW_0'
+        #     #     continue
+        #     # if init_methods[i] == 'colored-noise-beta-1':
+        #     #     init_methods[i] = 'CNRW_1'
+        #     #     continue
+        #     # if init_methods[i] == 'colored-noise-beta-2':
+        #     #     init_methods[i] = 'CNRW_2'
+        #     #     continue
+        # row_cpt += 1
 
-        row_cpt += 1
-
+    exit()
     ## Plot JS divergence on actions
     fig, ax = plt.subplots()
     fig.patch.set_visible(False)
