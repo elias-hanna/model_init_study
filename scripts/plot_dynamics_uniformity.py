@@ -35,7 +35,8 @@ def main(args):
         ## Iterate over the repetitions folder in the environment
         interest_inds = []
         if 'maze' in env:
-            interest_inds = [0,1] ## x, y
+            # interest_inds = [0,1] ## x, y
+            interest_inds = [0,1,2,3] ## x, y, vx, vy
         elif env == 'ball_in_cup':
             interest_inds = [i for i in range(6)] ## x, y, z, xspeed yspeed,zspeed
             # interest_inds = [0,1,2,3,4,5] ## x, y, z, xspeed yspeed,zspeed
@@ -138,7 +139,7 @@ def main(args):
     uni_metric_std = envs_cv_std
     
     ## Plot boxplots of uniformity
-    fig, ax = plt.subplots(figsize=(4, 4))
+    fig, ax = plt.subplots(figsize=(6, 6))
 
     x = [i for i in range(len(environments))]
     # ax.errorbar(x, envs_jsd_mean_divs, yerr=envs_jsd_std_divs, fmt='o', capsize=4)
@@ -230,8 +231,8 @@ def main(args):
                       bbox_inches='tight')
         fig_plan_h.savefig(f"{init_method}_pred_error_vs_uniformity_plan_h",
                            bbox_inches='tight')
-        # fig_full.savefig(f"{init_method}_pred_error_vs_uniformity_full",
-                         # bbox_inches='tight')
+        fig_full.savefig(f"{init_method}_pred_error_vs_uniformity_full",
+                         bbox_inches='tight')
 
     prepare_plot(ax_all_1, fig_all_1, '1-step', ticks,
                  environments, 'all init_methods')
@@ -247,13 +248,14 @@ def main(args):
                       bbox_inches='tight')
     fig_all_plan_h.savefig(f"pred_error_vs_uniformity_plan_h_all",
                            bbox_inches='tight')
-    # fig_all_full.savefig(f"pred_error_vs_uniformity_full_all",
-                         # bbox_inches='tight')
+    fig_all_full.savefig(f"pred_error_vs_uniformity_full_all",
+                         bbox_inches='tight')
         
 def prepare_plot(ax, fig, h, ticks, environments, init_method):
-    ax.set_xticks(ticks, environments, fontsize=12)
-    ax.set_ylim(-0.1,1.1)
-    ax.set_xlim(-0.5,3.2)
+    ax.set_xticks(ticks, environments, fontsize=8)
+    ax.set_ylim(-0.1,1.1) 
+    # ax.set_xlim(-0.5,3.2) ## good for 3 envs
+    ax.set_xlim(-0.5,5.2)
     ax.set_xlabel('Environments (from high to low uniformity)', fontsize=12)
     ax.set_ylabel('Model prediction error', fontsize=12)
     # ax.set_title(f'{h} model prediction error depending on \n'\

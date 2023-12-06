@@ -25,8 +25,9 @@ episodes=(10)
 #################### Parameters used for the plots #############################
 
 # environments=(cartpole reacher pusher)
-environments=(cartpole pusher)
+environments=(pusher)
 # environments=(ball_in_cup redundant_arm_no_walls_limited_angles fastsim_maze fastsim_maze_traps)
+environments=(fastsim_maze fastsim_maze_traps)
 
 pred_error_plot_upper_limits=(5 5 10000 10000) # warning needs to be in same order as envs
 
@@ -39,26 +40,26 @@ methods=(random-actions colored-noise-beta-0 colored-noise-beta-1 colored-noise-
 mis_path=~/src/model_init_study
 
 ## Plot means (only means) over replications on same plot
-# cpt=0
-# for env in "${environments[@]}"; do
-#     cd ${env}_results
-#     echo "Processing following folder"; pwd
-#     python $mis_path/scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
-#     cd ..
-#     cpt=$((cpt+1))
-#     echo "finished plotting pred errors for $env\n\n"
-# done
-
-# ## Plot histogram of actions and observations repartition over replications on same plot
 cpt=0
 for env in "${environments[@]}"; do
     cd ${env}_results
     echo "Processing following folder"; pwd
-    python $mis_path/scripts/plot_hist_over_all_single.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path .
+    python $mis_path/scripts/plot_mean_over_all.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path . --pred-err-plot-upper-lim ${pred_error_plot_upper_limits[$cpt]} --disagr-plot-upper-lim ${disagr_plot_upper_limits[$cpt]}
     cd ..
     cpt=$((cpt+1))
-    echo "finished plotting histograms for $env"
+    echo "finished plotting pred errors for $env\n\n"
 done
+
+# # ## Plot histogram of actions and observations repartition over replications on same plot
+# cpt=0
+# for env in "${environments[@]}"; do
+#     cd ${env}_results
+#     echo "Processing following folder"; pwd
+#     python $mis_path/scripts/plot_hist_over_all_single.py --init-methods ${methods[*]} --init-episodes ${episodes[*]} --environment $env --dump-path .
+#     cd ..
+#     cpt=$((cpt+1))
+#     echo "finished plotting histograms for $env"
+# done
 
 
 ######################## OLD for DAQD oriented MIS exps ########################
